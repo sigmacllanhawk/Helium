@@ -912,6 +912,7 @@ window.onload = async function () {
                   <h2 class="login-title">👋 Hello, ${user}!</h2>
                   <button class="close-page" onclick="closePage()">✖</button>
               </div>
+              <br>
               <p class="login-subtext">Current Tier: ${perkStatus}/3</p>
               <p class="login-subtext">People Referred: ${referredCount}</p>
 
