@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
             .overflow-container {
-        word-break: break-word; /* Ensures long words break instead of overflowing */
-        white-space: normal; /* Allows text to wrap */
-        overflow-wrap: break-word; /* Ensures proper word wrapping */
-        min-width: fit-content; /* Expands block if needed */
+        word-break: break-word; 
+        white-space: normal; 
+        overflow-wrap: break-word; 
+        min-width: fit-content; 
     }
 
     </style>
@@ -24,7 +24,6 @@
     <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
 </div>
         
-        <!-- Search and Filter Controls -->
         <div class="mb-4 flex gap-2">
             <input type="text" id="searchInput" oninput="filterSessions()" placeholder="Search by ID..." class="p-2 border rounded w-full">
             <select id="filterSelect" onchange="filterSessions()" class="p-2 border rounded">
@@ -35,7 +34,6 @@
             </select>
         </div>
 
-        <!-- Scrollable Container -->
         <div id="sessions" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
         <div id="pagination-controls" class="flex justify-center mt-4"></div>
         <br>
@@ -84,7 +82,7 @@
     }
     function extractTimeAgo(status) {
     const match = status.match(/Last online (\d+) (seconds?|minutes?|hours?|days?) ago/);
-    if (!match) return Infinity; // If no match, push to the end
+    if (!match) return Infinity; 
 
     let value = parseInt(match[1]);
     let unit = match[2];
@@ -105,15 +103,13 @@ function displaySessions() {
 
     let dataToDisplay = filteredSessionsData.length ? filteredSessionsData : sessionsData;
 
-    // Apply filter first
     dataToDisplay = dataToDisplay.filter(session => {
         if (filterValue === "Online") return session.status === "Online";
         if (filterValue === "Offline") return session.status.startsWith("Last online");
         if (filterValue === "Banned") return session.status === "Banned";
-        return true; // "All" selected
+        return true; 
     });
 
-    // Apply sorting logic
     dataToDisplay.sort((a, b) => {
         if (filterValue === "all") {
             if (a.status === "Online" && b.status !== "Online") return -1;
@@ -138,7 +134,6 @@ function displaySessions() {
         return 0;
     });
 
-    // Pagination logic
     const totalPages = Math.ceil(dataToDisplay.length / sessionsPerPage);
     const start = (currentPage - 1) * sessionsPerPage;
     const end = start + sessionsPerPage;
@@ -182,12 +177,11 @@ function changePage(direction) {
     const filterValue = document.getElementById("filterSelect").value;
     let dataToDisplay = filteredSessionsData.length ? filteredSessionsData : sessionsData;
 
-    // Apply filter again to get accurate page count
     dataToDisplay = dataToDisplay.filter(session => {
         if (filterValue === "Online") return session.status === "Online";
         if (filterValue === "Offline") return session.status.startsWith("Last online");
         if (filterValue === "Banned") return session.status === "Banned";
-        return true; // "All" selected
+        return true; 
     });
 
     const totalPages = Math.ceil(dataToDisplay.length / sessionsPerPage);
@@ -226,7 +220,7 @@ async function toggleBan(sessionId) {
         body: JSON.stringify({ message, duration }) 
     });
 
-    fetchSessions(); // Refresh session details after ban/unban
+    fetchSessions(); 
 }
 
 
@@ -239,7 +233,6 @@ async function toggleBan(sessionId) {
     const searchTerm = document.getElementById("searchInput").value.toLowerCase();
     const filterValue = document.getElementById("filterSelect").value;
 
-    // Apply filters
     const filtered = sessionsData.filter(session => {
         const matchesSearch = session.sessionId.toLowerCase().includes(searchTerm);
         const matchesFilter = 
@@ -251,7 +244,6 @@ async function toggleBan(sessionId) {
         return matchesSearch && matchesFilter;
     });
 
-    // Update global filtered data
     filteredSessionsData = filtered;
     currentPage = 1;
     displaySessions();
