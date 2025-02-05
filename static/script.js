@@ -1038,4 +1038,4 @@ const accountName = localStorage.getItem("acc_username") || "Not logged in";
 setTimeout(console.log.bind(console, "%cHelium", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 26px; font-size:25px;"));
 setTimeout(console.log.bind(console, "%cIf you are seeing this, the main script system has loaded.", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 20px; font-size:18px;"));
 setTimeout(console.log.bind(console, "%cIf you encounter an error, contact Paxton.", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 20px; font-size:13px;"));
-setTimeout(console.log.bind(console, `%cInformation:\nOnline: ${online}\nURL: ${diagnosticDomain}\nBrowser: ${browserName}\nUA: ${userAgent}\nAccount Username: `, "background: grey;color:white;padding:5px;line-height: 15px; border-radius: 5px;font-size:12px;"));
+setTimeout(console.log.bind(console, `%cInformation:\nOnline: ${online}\nURL: ${diagnosticDomain}\nBrowser: ${browserName}\nUA: ${userAgent}\nAccount Username: ${accountName}`, "background: grey;color:white;padding:5px;line-height: 15px; border-radius: 5px;font-size:12px;"));
