@@ -105,7 +105,7 @@ function notification(message, bgColor) {
   notificationCount++;
 
   setTimeout(() => notification.classList.add('show'), 10);
-  setTimeout(() => hideNotification(notification), 3500);
+  setTimeout(() => hideNotification(notification), 10000);
 }
 
 function hideNotification(notification) {
