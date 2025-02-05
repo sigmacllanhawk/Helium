@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .overflow-container {
-        word-break: break-word;
-        white-space: normal;
-        overflow-wrap: break-word; 
-        min-width: fit-content; 
-    }
+            word-break: break-word;
+            white-space: normal;
+            overflow-wrap: break-word; 
+            min-width: fit-content; 
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex justify-center items-center min-h-screen">
@@ -32,62 +32,65 @@
         let loadedCount = 0; 
         const chunkSize = 20;
         let sessionBanStatus = {}; 
-    
+        let refreshInterval;
+
         function goBack() {
             window.location.href = "/admin";
         }
-    
+
         function manageSession(sessionId) {
             window.location.href = `/admin/session?id=${sessionId}`;
         }
-    
+
         function setCategory(category) {
             selectedCategory = category;
             allWebsites = [];
             loadedCount = 0; 
             fetchVisitedWebsites(true); 
-            updateCategoryButtons(); 
+            updateCategoryButtons();
+            resetRefreshInterval();
         }
-    
+
         function updateCategoryButtons() {
             document.getElementById("btn-all").classList.toggle("bg-blue-700", selectedCategory === "all");
             document.getElementById("btn-all").classList.toggle("bg-blue-500", selectedCategory !== "all");
-    
+
             document.getElementById("btn-porn").classList.toggle("bg-gray-700", selectedCategory === "porn");
             document.getElementById("btn-porn").classList.toggle("bg-gray-500", selectedCategory !== "porn");
         }
-    
+
         async function fetchVisitedWebsites(reset = false) {
             if (reset) {
                 document.getElementById("websitesList").innerHTML = ""; 
             }
-    
+
             const res = await fetch(`/visited-websites?category=${selectedCategory}`);
             allWebsites = await res.json();
             loadedCount = 0; 
             await fetchBanStatuses(); 
             loadMoreEntries(); 
         }
-    
+
         async function fetchBanStatuses() {
             const uniqueSessionIds = [...new Set(allWebsites.map(entry => entry.sessionId))];
-    
+
             for (let sessionId of uniqueSessionIds) {
                 const res = await fetch(`/sessions/${sessionId}`);
                 const sessionData = await res.json();
                 sessionBanStatus[sessionId] = sessionData.banned ? "Banned" : "Not Banned";
             }
         }
-    
+
         function loadMoreEntries() {
             const container = document.getElementById("websitesList");
-    
+            container.innerHTML = "";
+
             let endIndex = Math.min(loadedCount + chunkSize, allWebsites.length);
-            for (let i = loadedCount; i < endIndex; i++) {
+            for (let i = 0; i < endIndex; i++) {
                 let entry = allWebsites[i];
-    
+
                 const banStatus = sessionBanStatus[entry.sessionId] || "Loading..."; 
-    
+
                 const entryElement = document.createElement("div");
                 entryElement.className = "p-4 bg-gray-200 rounded flex justify-between items-center overflow-container";
                 entryElement.innerHTML = `
@@ -98,25 +101,31 @@
                     </div>
                     <button onclick="manageSession('${entry.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">Manage Session</button>
                 `;
-    
+
                 container.appendChild(entryElement);
             }
-    
+
             loadedCount = endIndex;
         }
-    
+
         function handleScroll() {
             const container = document.getElementById("websitesList");
             if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
                 loadMoreEntries();
             }
         }
-    
+
+        function resetRefreshInterval() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            refreshInterval = setInterval(fetchVisitedWebsites, 5000);
+        }
+
         document.getElementById("websitesList").addEventListener("scroll", handleScroll);
-    
+
         fetchVisitedWebsites();
-        setInterval(fetchVisitedWebsites, 5000);
+        resetRefreshInterval();
     </script>    
-            
 </body>
 </html>
