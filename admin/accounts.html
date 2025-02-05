@@ -9,7 +9,6 @@
 let currentPage = 1;
 const accountsPerPage = 15;
 
-// Fetch and display accounts
 async function fetchAccounts() {
     try {
         const response = await fetch(`/acc/get-referral-stats-list?page=${currentPage}`);
@@ -22,7 +21,6 @@ async function fetchAccounts() {
     }
 }
 
-// Display accounts with pagination
 function displayAccounts(accounts) {
     const container = document.getElementById("accountsContainer");
     container.innerHTML = "";
@@ -45,7 +43,6 @@ function displayAccounts(accounts) {
         container.innerHTML += accountHTML;
     });
 }
-// Delete Account (Fixes button not working)
 async function deleteAccount(username) {
     if (!confirm(`Are you sure you want to delete ${username}? This action cannot be undone.`)) return;
 
@@ -59,7 +56,7 @@ async function deleteAccount(username) {
         const data = await response.json();
         if (response.ok) {
             console.log(`Successfully deleted account: ${username}`);
-            fetchAccounts(); // Refresh account list after deletion
+            fetchAccounts(); 
         } else {
             console.error("Failed to delete account:", data.error);
         }
@@ -78,13 +75,13 @@ async function setPerkLevel(username) {
         const response = await fetch("/acc/set-perk-level", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, perkLevel: parseInt(perkLevel) }) // Ensure perkLevel is a number
+            body: JSON.stringify({ username, perkLevel: parseInt(perkLevel) }) 
         });
 
         const data = await response.json();
         if (response.ok) {
             console.log(`Successfully set perk level to ${perkLevel} for ${username}.`);
-            fetchAccounts(); // Refresh account list after update
+            fetchAccounts();
         } else {
             console.error("Failed to set perk level:", data.error);
         }
@@ -93,7 +90,6 @@ async function setPerkLevel(username) {
     }
 }
 
-// Pagination controls
 function updatePaginationControls(totalPages) {
     const paginationContainer = document.getElementById("pagination-controls");
 
@@ -110,7 +106,6 @@ function changePage(direction) {
     fetchAccounts();
 }
 
-// Auto-refresh every 5 seconds
 fetchAccounts();
 setInterval(fetchAccounts, 5000);
 
@@ -121,10 +116,7 @@ setInterval(fetchAccounts, 5000);
     <div class="w-full max-w-5xl p-6 bg-white shadow-md rounded-lg">
         <h1 class="text-2xl font-semibold mb-4 text-center">Account & Referral Management</h1>
     <button onclick="window.location.href='/admin'" class="bg-blue-500 text-white px-4 py-2 rounded">Back</button>
-        <!-- Account List -->
         <div id="accountsContainer" class="space-y-4"></div>
-
-        <!-- Pagination Controls -->
         <div id="pagination-controls" class="flex justify-center mt-4"></div>
     </div>
 </body>
