@@ -105,6 +105,7 @@
 </head>
 <body>
     <div class="container">
+        <br><br>
         <h1>Error processing your request</h1>
         <p>Error processing your request. The webpage may be blocked. Try reloading.</p>
         <textarea id="errorTrace" cols="40" rows="10" readonly></textarea>
