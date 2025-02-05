@@ -8,10 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
             .overflow-container {
-        word-break: break-word; /* Ensures long words break instead of overflowing */
-        white-space: normal; /* Allows text to wrap */
-        overflow-wrap: break-word; /* Ensures proper word wrapping */
-        min-width: fit-content; /* Expands block if needed */
+        word-break: break-word; 
+        white-space: normal; 
+        overflow-wrap: break-word;
+        min-width: fit-content; 
     }
     </style>
 </head>
@@ -21,14 +21,12 @@
         <h1 class="text-2xl font-semibold mb-4 text-center">Session Details</h1>
         <button onclick="goBack()" class="absolute top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded">Back</button>
 
-        <!-- Scrollable Session Info -->
         <div id="sessionDetails" class="overflow-y-auto max-h-[30vh] space-y-2 border p-2 rounded bg-gray-50 overflow-container"></div>
         <div class="mb-4">
             <input type="text" id="sessionMessage" placeholder="Enter message..." class="p-2 border rounded w-full">
             <input type="color" id="sessionMessageColor" value="#ffffff" class="p-2 border rounded">
             <button onclick="sendMessageToSession()" class="bg-blue-500 text-white px-4 py-2 rounded">Send Message</button>
         </div>
-        <!-- Scrollable Sites Visited List -->
         <h2 class="text-xl font-semibold mt-4">Sites Visited</h2>
         <div id="sitesVisited" class="overflow-y-auto max-h-[40vh] space-y-2 border p-2 rounded bg-gray-50 overflow-container"></div>
     </div>
@@ -92,7 +90,6 @@
         </button>
     `;
 
-    // Update visited sites
     const sitesContainer = document.getElementById("sitesVisited");
     sitesContainer.innerHTML = "";
     if (session.logs && session.logs.length > 0) {
@@ -137,7 +134,7 @@
         body: JSON.stringify({ message, duration }) 
     });
 
-    fetchSessionDetails(); // Refresh session details after ban/unban
+    fetchSessionDetails();
 }
 
     
