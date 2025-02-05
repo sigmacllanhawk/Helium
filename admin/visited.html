@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .overflow-container {
-        word-break: break-word; /* Ensures long words break instead of overflowing */
-        white-space: normal; /* Allows text to wrap */
-        overflow-wrap: break-word; /* Ensures proper word wrapping */
-        min-width: fit-content; /* Expands block if needed */
+        word-break: break-word;
+        white-space: normal;
+        overflow-wrap: break-word; 
+        min-width: fit-content; 
     }
     </style>
 </head>
@@ -27,14 +27,14 @@
     </div>
 
     <script>
-        let selectedCategory = "all"; // Default filter
-        let allWebsites = []; // Stores all fetched data
-        let loadedCount = 0; // Number of currently displayed items
-        const chunkSize = 20; // Number of entries to load at a time
-        let sessionBanStatus = {}; // Store ban status per session
+        let selectedCategory = "all"; 
+        let allWebsites = [];
+        let loadedCount = 0; 
+        const chunkSize = 20;
+        let sessionBanStatus = {}; 
     
         function goBack() {
-            window.location.href = "/admin"; // Redirect back to the session tracker
+            window.location.href = "/admin";
         }
     
         function manageSession(sessionId) {
@@ -43,10 +43,10 @@
     
         function setCategory(category) {
             selectedCategory = category;
-            allWebsites = []; // Reset list
-            loadedCount = 0; // Reset loaded count
-            fetchVisitedWebsites(true); // Fetch fresh data
-            updateCategoryButtons(); // Update button styles
+            allWebsites = [];
+            loadedCount = 0; 
+            fetchVisitedWebsites(true); 
+            updateCategoryButtons(); 
         }
     
         function updateCategoryButtons() {
@@ -59,18 +59,18 @@
     
         async function fetchVisitedWebsites(reset = false) {
             if (reset) {
-                document.getElementById("websitesList").innerHTML = ""; // Clear previous content
+                document.getElementById("websitesList").innerHTML = ""; 
             }
     
             const res = await fetch(`/visited-websites?category=${selectedCategory}`);
             allWebsites = await res.json();
-            loadedCount = 0; // Reset loaded count
-            await fetchBanStatuses(); // Fetch ban statuses before displaying
-            loadMoreEntries(); // Load the first chunk
+            loadedCount = 0; 
+            await fetchBanStatuses(); 
+            loadMoreEntries(); 
         }
     
         async function fetchBanStatuses() {
-            const uniqueSessionIds = [...new Set(allWebsites.map(entry => entry.sessionId))]; // Get unique session IDs
+            const uniqueSessionIds = [...new Set(allWebsites.map(entry => entry.sessionId))];
     
             for (let sessionId of uniqueSessionIds) {
                 const res = await fetch(`/sessions/${sessionId}`);
@@ -86,7 +86,7 @@
             for (let i = loadedCount; i < endIndex; i++) {
                 let entry = allWebsites[i];
     
-                const banStatus = sessionBanStatus[entry.sessionId] || "Loading..."; // Show "Loading..." if not fetched yet
+                const banStatus = sessionBanStatus[entry.sessionId] || "Loading..."; 
     
                 const entryElement = document.createElement("div");
                 entryElement.className = "p-4 bg-gray-200 rounded flex justify-between items-center overflow-container";
@@ -108,13 +108,12 @@
         function handleScroll() {
             const container = document.getElementById("websitesList");
             if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
-                loadMoreEntries(); // Load more if scrolled near bottom
+                loadMoreEntries();
             }
         }
     
         document.getElementById("websitesList").addEventListener("scroll", handleScroll);
     
-        // Fetch initial data
         fetchVisitedWebsites();
     </script>    
             
