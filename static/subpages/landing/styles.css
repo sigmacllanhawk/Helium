@@ -22,22 +22,55 @@ html, body {
 
 }
 
-#buttons img:hover {
-    transform: scale(1.15);
-    cursor: pointer;
+#buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    align-items: center;
+    position: absolute;
+    bottom: 20px;
+    padding: 12px 20px;
+    background: rgba(var(--background-color), 0.2); 
+    backdrop-filter: blur(10px);
+    border-radius: 40px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
 }
+
 #buttons img {
     width: 40px;
     transition: transform 0.1s ease-in-out;
 }
 
+#buttons img:hover {
+    transform: scale(1.15);
+    cursor: pointer;
+}
+
+#info-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 30px;
+    background: rgba(var(--background-color), 0.2); 
+    backdrop-filter: blur(10px); 
+    border-radius: 25px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+    text-align: center;
+}
+
+#time {
+    font-family: 'Inter', sans-serif;
+    font-size: 100px;
+    font-weight: 700;
+    color: #fff;
+}
+
 #text {
-    width: 60vw;
-    height: 3vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0px;
+    padding: 5px 10px;
 }
 
 #text p {
@@ -49,6 +82,22 @@ html, body {
     text-align: center;
 }
 
+
+#text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+}
+
+#text p {
+    color: #fff;
+    font-size: 17px;
+    font-style: italic;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    text-align: center;
+}
 #bigthing {
     width: 100vw;
     height: 100vh; 
@@ -56,18 +105,7 @@ html, body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
     text-align: center;
-}
-
-#buttons {
-    width: 100vw;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    align-items: center;
-    position: absolute;
-    bottom: 20px;
 }
 
 @media (max-height: 970px) {

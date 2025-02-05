@@ -20,6 +20,13 @@ body {
     font-size: 50px;
     font-weight: 900;
     color: white;
+    padding: 10px 20px;
+    background: rgba(var(--background-color), 0.15); 
+    backdrop-filter: blur(10px); 
+    border-radius: 12px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: inline-block; 
+    text-align: center;
 }
 
 .side-menu {
@@ -27,7 +34,11 @@ body {
     transform: translateY(-50%);
     position: absolute;
     flex-direction: column;
-    padding-left: 0px;
+    padding: 15px;
+    background: rgba(var(--background-color), 0.1); 
+    backdrop-filter: blur(12px);
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .side-menu ul {
@@ -54,7 +65,7 @@ body {
     margin-top: auto; 
     border: none;
     position: absolute;
-    left: 160px;
+    left: 257.5px;
     top: 50%;
     transform: translateY(-50%);
 }
@@ -81,13 +92,21 @@ body {
     height: 175px;
     box-sizing: border-box; 
 }
+
 .settings-panel {
     position: absolute;
     width: 350px;
     height: 175px;
-    border-radius: 3px;
+    border-radius: 12px;
     display: block;
-    background-color: rgb(var(--background-color), .3);
+    background: rgba(var(--background-color), 0.15); 
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+    transition: transform 0.2s ease-in-out;
+}
+
+.settings-panel:hover {
+    transform: scale(1.05); 
 }
 
 .settings-title {

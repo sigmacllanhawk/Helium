@@ -323,7 +323,7 @@ switch (autoLaunchCookie) {
         root.style.setProperty('--background-color', '0, 0, 0');
         root2.style.setProperty('--background-color', '0, 0, 0');
         parent.notification('Your theme has been set.', "#95ff8a");
-        localStorage.setItem('theme', '0,0,0');
+        localStorage.setItem('theme', '0, 0, 0');
     } else {
         if (!/^#?([a-f0-9]{6}|[a-f0-9]{3})$/i.test(theme)) {
             parent.notification('Invalid Hex Color.', "#ff9999");
@@ -355,7 +355,13 @@ switch (autoLaunchCookie) {
     parent.notification(`Re-Registered the service workers.`, "#95ff8a");
     parent.worker();
   }
+  function rgbToHex(rgbString) {
+    const [r, g, b] = rgbString.split(',').map(num => parseInt(num.trim(), 10));
+    return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+}
+    
 let searchEngine;
+let theme;
 if (localStorage.getItem('searchEngine') == 'https://www.google.com/search?q=') searchEngine = "Google Search";
 if (localStorage.getItem('searchEngine') == 'https://www.bing.com/search?q=') searchEngine = "Bing Search";
 if (localStorage.getItem('searchEngine') == 'https://duckduckgo.com/?t=h_&q=') searchEngine = "DuckDuckGo Search";
@@ -364,3 +370,9 @@ if (localStorage.getItem('customTitle')) document.getElementById('titleChange').
 if (parent.window.panicKeys !== null) document.getElementById("panic").placeholder = "Selected Key(s): " + parent.window.panicKeys.join(" + ");
 if (parent.window.panicURL !== null) document.getElementById("panicURL").placeholder = parent.window.panicUrl;
 if (localStorage.getItem('searchEngine')) document.getElementById('changeEngineFirst').innerHTML = "Selected: " + searchEngine;
+if (localStorage.getItem('theme')) theme = localStorage.getItem('theme');
+if (localStorage.getItem('theme') === "255, 255, 255") document.getElementById('themeDropdownFirst').innerHTML = "Selected: Light";
+if (localStorage.getItem('theme') === "0, 0, 0") document.getElementById('themeDropdownFirst').innerHTML = "Selected: Dark"
+if (theme) document.getElementById('hexChanger').placeholder = rgbToHex(theme);
+if (localStorage.getItem("backgroundUrl")) document.getElementById('backgroundChanger').placeholder = localStorage.getItem("backgroundUrl");
+

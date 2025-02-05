@@ -21,9 +21,9 @@
                 <li id="cache-menu">Cache</li>
                 <li id="extensions-menu">Extensions</li>
             </ul>
-            <div class="divider"></div>
         </div>
-    
+        <div class="divider"></div>
+
         <!-- Four separate divs for each page -->
         <div id="general-settings" class="settings-page">
             <div class="settings-container">
@@ -113,8 +113,8 @@
                 <p class="settings-desc">
                     Switch between dark and light mode.
                 </p>
-                <select class="settings-select" onchange="changeTheme(this.value)">
-                    <option value="blank">Pick from the list</option>
+                <select id="themeDropdown" class="settings-select" onchange="changeTheme(this.value)">
+                    <option id="themeDropdownFirst" value="blank">Pick from the list</option>
                     <option value="light">Light Theme</option>
                     <option value="dark">Dark Theme</option>
                 </select>

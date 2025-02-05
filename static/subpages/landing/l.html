@@ -9,13 +9,18 @@
 </head>
 <body>
     <div id="bigthing">
-    <div id="time"></div>
-    <div id="text"><center><p id="tag">PLACEHOLDER</p></center></div>
-    <div id="buttons">
-        <img src="chatgpt.png" onclick="parent.runService('helium://gpt')">
-        <img src="game.png" onclick="parent.runService('helium://apps')" style="height: 33px;">
-        <img src="cog.png" onclick="parent.runService('helium://settings')">
+        <div id="info-wrapper">
+            <div id="time"></div>
+            <div id="text">
+                <p id="tag">PLACEHOLDER</p>
+            </div>
+        </div>
+            <div id="buttons">
+            <img src="chatgpt.png" onclick="parent.runService('helium://gpt')">
+            <img src="game.png" onclick="parent.runService('helium://apps')" style="height: 33px;">
+            <img src="cog.png" onclick="parent.runService('helium://settings')">
+        </div>
     </div>
-</div>
+    
 </body>
 </html>
