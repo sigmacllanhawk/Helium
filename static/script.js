@@ -813,7 +813,8 @@ async function login(username, password) {
       document.cookie = `session=${username}; path=/; max-age=86400`; // 1-day session
       location.reload();
     } else {
-      console.error(data.error);
+      document.getElementById('loginError').style.display = "block";
+      document.getElementById('loginError').textContent = data.error;
   }
 }
 
@@ -938,8 +939,6 @@ window.onload = async function () {
               <h2 class="login-title">Accounts</h2>
               <button class="close-page" onclick="closePage()">✖</button>
           </div>
-          <p class="login-subtext">Login or Create an Account</p>
-
           <div class="form-container">
               <div class="form-box">
                   <h3>Login</h3>

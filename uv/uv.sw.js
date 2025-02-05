@@ -8,40 +8,124 @@
         for (const node of document.querySelectorAll("#uvHostname")) node.textContent = ${JSON.stringify(location.hostname)};
         reload.addEventListener("click", () => location.reload());
         uvVersion.textContent = ${JSON.stringify("3.2.7")};
-    `;return`<!DOCTYPE html>
-        <html>
-        <head>
-        <meta charset='utf-8' />
-        <title>Error</title>
-        <style>
-        * { background-color: white }
-        </style>
-        </head>
-        <body>
-        <h1 id='errorTitle'>Error processing your request</h1>
-        <hr />
-        <p>Failed to load <b id="fetchedURL"></b></p>
-        <p id="errorMessage">Internal Server Error</p>
+    `;return`
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .footer {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+        textarea#errorTrace {
+            width: 100%;
+            height: 150px;
+            background: #1a1a1a;
+            color: rgb(9, 255, 0);
+            border: 1px solid rgb(9, 255, 0);
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        .troubleshoot {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .troubleshoot h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .troubleshoot ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .troubleshoot li {
+            background: #1a1a1a;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 5px solid rgb(9, 255, 0);
+        }
+        .troubleshoot a {
+            color: rgb(9, 255, 0);
+            text-decoration: none;
+        }
+        .troubleshoot a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Error processing your request</h1>
+        <p>Error processing your request. The webpage may be blocked. Try reloading.</p>
         <textarea id="errorTrace" cols="40" rows="10" readonly></textarea>
-        <p>Try:</p>
-        <ul>
-        <li>Checking your internet connection</li>
-        <li>Verifying you entered the correct address</li>
-        <li>Clearing the site data</li>
-        <li>Contacting <b id="uvHostname"></b>'s administrator</li>
-        <li>Verify the server isn't censored</li>
-        </ul>
-        <p>If you're the administrator of <b id="uvHostname"></b>, try:</p>
-        <ul>
-        <li>Restarting your server</li>
-        <li>Updating Ultraviolet</li>
-        <li>Troubleshooting the error on the <a href="https://github.com/titaniumnetwork-dev/Ultraviolet" target="_blank">GitHub repository</a></li>
-        </ul>
-        <button id="reload">Reload</button>
-        <hr />
-        <p><i>Ultraviolet v<span id="uvVersion"></span></i></p>
-        <script src="${"data:application/javascript,"+encodeURIComponent(s)}"><\/script>
-        </body>
-        </html>
-        `}function R(a,e){let s={"content-type":"text/html"};return crossOriginIsolated&&(s["Cross-Origin-Embedder-Policy"]="require-corp"),new Response(O(String(a),e),{status:500,headers:s})}})();
+
+        <div class="troubleshoot">
+            <h2>Troubleshooting Steps</h2>
+            <ul>
+                <li>🔄 <strong>Reload the page</strong> to attempt a fresh connection.</li>
+                <li>🔗 <strong>Ensure the website exists</strong> by checking its URL and trying a direct visit.</li>
+                <li>⚙️ <strong>Ensure the website is working</strong> by using another device or network.</li>
+                <li>🗑️ <strong>Clear LocalStorage</strong> in Helium settings to reset cached data.</li>
+                <li>🌐 <strong>Check your internet connection</strong> to confirm connectivity.</li>
+                <li>📧 <strong>Email</strong> <a href="mailto:hey@paxton.rip">hey@paxton.rip</a> if the error persists.</li>
+            </ul>
+        </div>
+
+        <p class="footer">© 2025 Abyss Services LLC</p>
+    </div>
+    <script src="${"data:application/javascript,"+encodeURIComponent(s)}"><\/script>
+</body>
+</html>
+
+    `}function R(a,e){let s={"content-type":"text/html"};return crossOriginIsolated&&(s["Cross-Origin-Embedder-Policy"]="require-corp"),new Response(O(String(a),e),{status:500,headers:s})}})();
 //# sourceMappingURL=uv.sw.js.map
