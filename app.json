@@ -1,0 +1,6 @@
+{
+	"name": "Helium",
+	"description": "Node.js Helium instance",
+	"repository": "https://github.com/impaxton/Helium",
+	"keywords": ["tomp", "ultraviolet", "abyss", "helium"]
+}

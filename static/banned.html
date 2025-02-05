@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+    <title>Banned</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            background-color: rgb(255, 98, 98);
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 64px;
+            margin: 0;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+        }
+    </style>
+    <script>
+        async function fetchBanMessage() {
+    const sessionId = localStorage.getItem("session_id");
+    if (!sessionId) return;
+    
+    const res = await fetch(`/ban/message/${sessionId}`);
+    const data = await res.json();
+    
+    document.getElementById("banMessage").textContent = `Message from admin: "` + data.message + `"`;
+    document.getElementById("banDuration").textContent = `Ban Duration: ${data.duration}`;
+}
+
+
+
+        async function checkUnbanStatus() {
+            const sessionId = localStorage.getItem("session_id");
+            if (!sessionId) return;
+
+            try {
+                const res = await fetch("/heartbeat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Session-ID": sessionId,
+                        "X-User-Online": "true"
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await res.json();
+                if (data.status === "ok") {
+                    window.location.href = "/";
+                }
+            } catch (error) {
+                console.error("Error checking unban status:", error);
+            }
+        }
+        function setSessionId() {
+            document.getElementById('sessionid').innerHTML = "Session ID: " + localStorage.getItem('session_id');
+        }
+        setTimeout(setSessionId, 750);
+        fetchBanMessage();
+        setInterval(checkUnbanStatus, 10000); // Check unban status every 10 seconds
+    </script>
+</head>
+<body>
+    <div class="container">
+        <img style="width: 256px" src="assets/banned.png">
+        <h1>Banned</h1>
+        <h2>Uh oh! Looks like you've been banned. If you'd like to get unbanned, email <a href="mailto:hey@paxton.rip" style="color: white; text-decoration: underline;">hey@paxton.rip</a> inquiring about your ban.</h2>
+        <i><h2 style="font-size: 22px;" id="banMessage"></h2></i>
+        <i><h2 id="banDuration" style="font-size: 15px;"></h2></i>
+        <i><h2 id="sessionid" style="font-size: 15px;"></h2></i>
+    </div>
+</body>

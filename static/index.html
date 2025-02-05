@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helium</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-YF3F3BP389');
+</script>
+</head>
+<body>
+  <div class="browser">
+    <div class="tab-bar-container">
+      <div class="tab-bar" id="tabBar">
+        <button class="tab active" id="0" onclick="selectTab(0)">
+          <p id="tabText">New Tab</p>
+          <img src="assets/closeTab.svg" id="closeTab" onClick="closeTab(0)"></img>
+        </button>
+        <button class="add-tab" onclick="addTab()">+</button>
+        <div id="utilities2" onclick="openPage()">
+          <img style="margin-right: 8px;" src="assets/user.svg">
+          <p style="font-weight: 500;">Login</p>
+        </div>
+        <div id="utilities">
+          <img src="assets/back.svg" onclick="navigateBack()">
+          <img src="assets/foward.svg" onclick="navigateForward()">
+          <img src="assets/reload.svg" onclick="reloadPage()">
+          <img src="assets/bars-solid.svg" onclick="openHamburgerMenu()" id="hamburgermenuicon"></img>
+        </div>
+      </div>
+    </div>
+    <div id="hamburgerbackground">
+      <div id="hamburgermenu" class="hamburger-menu">
+        <button onclick="openSettings()">Settings</button>
+        <button onclick="openApps()">Apps</button>
+        <button onclick="openGPT()">ChatGPT</button>
+	<button onclick="window.open('https://bit.ly/heliumlinks', '_blank');">Other Links</button>
+  <button onclick="openDev()">Dev Menu</button>
+  <div style="background: none; width: 100px; margin-top: 0px; margin-bottom: 0px;" id="utilities3">
+    <img style="margin-right: 10px; margin-left: 7.5px;" src="assets/popout.svg" onclick="popout()">
+    <img style="margin-right: 7.5px; margin-left: 7.5px;" src="assets/expand.svg" onclick="fullscreen()">
+    <img style="margin-right: 10px; margin-left: 7.5px;" src="assets/code.svg" onclick="erudaToggle()" id="hamburgermenuicon"></img>
+  </div>
+  
+      </div>
+      <div id="hamburgerbackgroundcontent"></div>
+    </div>
+    <div id="searchbarbackground">
+      <div id="sbBackgroundContent"></div>
+      <input type="text" id="searchBar" placeholder="Search or enter a URL" />
+    </div>
+      <div id="suggestionsBackground">
+        <div id="suggestions" style="display: none;"></div>
+        <div id="sgBackgroundContent"></div>
+    </div>
+    <div id="iframeOverlay">
+      <div id="loadingScreen"><div class="lds-circle"><div></div></div><p id="quote"></p></div>
+     <iframe id="frame0" allowfullscreen src="subpages/landing/l.html"></iframe>
+    </div>
+  </div>
+  <div id="loginScreen">
+    <div id="loginArea">
+    </div>
+  </div>
+  <div id="onLoadPopup">
+    <h2 class="popup-title">🚀 Want Faster Speeds & Unblocked Links?</h2>
+    <p class="popup-description">Create an account and start inviting people today!</p>
+
+    <div class="popup-features">
+        <div class="popup-feature">5 Invites (Tier 1): Adblocking, immunity from bans, fast speeds</div>
+        <div class="popup-feature">10 Invites (Tier 2): All previous features, faster speeds, change locations, 1 new domain when needed</div>
+        <div class="popup-feature">20 Invites (Tier 3): All previous features, instant support from owner, unlimited new domains when needed</div>
+    </div>
+
+    <p class="popup-footer">Wondering how to create an account? Click <strong>Login</strong> at the top right.</p>
+
+    <button onclick="hideonLoadpopup()" class="popup-button">Got it!</button>
+</div>
+</div>
+
+  </div>
+  <!-- Hover panels -->
+  <script src="script.js"></script>
+  <script src="staff/uv.bundle.js" defer></script>
+  <script src="staff/uv.config.js" defer></script>
+  <script src="baremux/index.js" defer></script>
+  <script src="epoxy/index.js" defer></script>
+</body>
+</html>

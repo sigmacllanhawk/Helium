@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visited Websites</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .overflow-container {
+        word-break: break-word; /* Ensures long words break instead of overflowing */
+        white-space: normal; /* Allows text to wrap */
+        overflow-wrap: break-word; /* Ensures proper word wrapping */
+        min-width: fit-content; /* Expands block if needed */
+    }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+    <div class="w-full max-w-3xl p-6 bg-white shadow-md rounded-lg relative flex flex-col">
+        <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+        <h1 class="text-2xl font-semibold mb-4 text-center">Visited Websites</h1>
+        <button onclick="goBack()" class="absolute top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded">Back</button>
+        <div class="flex justify-center gap-4 mb-4">
+            <button id="btn-all" onclick="setCategory('all')" class="bg-blue-500 text-white px-4 py-2 rounded">All</button>
+            <button id="btn-porn" onclick="setCategory('porn')" class="bg-gray-500 text-white px-4 py-2 rounded">Porn</button>
+        </div>
+        <div id="websitesList" class="overflow-y-auto max-h-[80vh] space-y-2 border p-2 rounded bg-gray-50" style="height: 80vh;"></div>
+    </div>
+
+    <script>
+        let selectedCategory = "all"; // Default filter
+        let allWebsites = []; // Stores all fetched data
+        let loadedCount = 0; // Number of currently displayed items
+        const chunkSize = 20; // Number of entries to load at a time
+        let sessionBanStatus = {}; // Store ban status per session
+    
+        function goBack() {
+            window.location.href = "/admin"; // Redirect back to the session tracker
+        }
+    
+        function manageSession(sessionId) {
+            window.location.href = `/admin/session?id=${sessionId}`;
+        }
+    
+        function setCategory(category) {
+            selectedCategory = category;
+            allWebsites = []; // Reset list
+            loadedCount = 0; // Reset loaded count
+            fetchVisitedWebsites(true); // Fetch fresh data
+            updateCategoryButtons(); // Update button styles
+        }
+    
+        function updateCategoryButtons() {
+            document.getElementById("btn-all").classList.toggle("bg-blue-700", selectedCategory === "all");
+            document.getElementById("btn-all").classList.toggle("bg-blue-500", selectedCategory !== "all");
+    
+            document.getElementById("btn-porn").classList.toggle("bg-gray-700", selectedCategory === "porn");
+            document.getElementById("btn-porn").classList.toggle("bg-gray-500", selectedCategory !== "porn");
+        }
+    
+        async function fetchVisitedWebsites(reset = false) {
+            if (reset) {
+                document.getElementById("websitesList").innerHTML = ""; // Clear previous content
+            }
+    
+            const res = await fetch(`/visited-websites?category=${selectedCategory}`);
+            allWebsites = await res.json();
+            loadedCount = 0; // Reset loaded count
+            await fetchBanStatuses(); // Fetch ban statuses before displaying
+            loadMoreEntries(); // Load the first chunk
+        }
+    
+        async function fetchBanStatuses() {
+            const uniqueSessionIds = [...new Set(allWebsites.map(entry => entry.sessionId))]; // Get unique session IDs
+    
+            for (let sessionId of uniqueSessionIds) {
+                const res = await fetch(`/sessions/${sessionId}`);
+                const sessionData = await res.json();
+                sessionBanStatus[sessionId] = sessionData.banned ? "Banned" : "Not Banned";
+            }
+        }
+    
+        function loadMoreEntries() {
+            const container = document.getElementById("websitesList");
+    
+            let endIndex = Math.min(loadedCount + chunkSize, allWebsites.length);
+            for (let i = loadedCount; i < endIndex; i++) {
+                let entry = allWebsites[i];
+    
+                const banStatus = sessionBanStatus[entry.sessionId] || "Loading..."; // Show "Loading..." if not fetched yet
+    
+                const entryElement = document.createElement("div");
+                entryElement.className = "p-4 bg-gray-200 rounded flex justify-between items-center overflow-container";
+                entryElement.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${entry.url}</p>
+                        <p class="text-sm text-gray-600">${new Date(entry.timestamp).toLocaleString()}</p>
+                        <p class="text-sm text-gray-500">Session ID: ${entry.sessionId} - <span class="${banStatus === 'Banned' ? 'text-red-500' : 'text-green-500'}">${banStatus}</span></p>
+                    </div>
+                    <button onclick="manageSession('${entry.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">Manage Session</button>
+                `;
+    
+                container.appendChild(entryElement);
+            }
+    
+            loadedCount = endIndex;
+        }
+    
+        function handleScroll() {
+            const container = document.getElementById("websitesList");
+            if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
+                loadMoreEntries(); // Load more if scrolled near bottom
+            }
+        }
+    
+        document.getElementById("websitesList").addEventListener("scroll", handleScroll);
+    
+        // Fetch initial data
+        fetchVisitedWebsites();
+    </script>    
+            
+</body>
+</html>

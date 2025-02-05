@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+
+:root {
+    --background-color: 
+        255,255,255;
+}
+/* Scroll bar stylings */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 10px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--background-color), .4); 
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #fff; 
+    border-radius: 3px;
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #fff; 
+  }
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+#apps-container {
+    padding: 15px 0 0 40px;
+}
+.selected-category {
+    text-decoration: underline;
+}
+.title {
+    font-size: 50px;
+    font-weight: 900;
+    color: white;
+}
+
+.side-menu {
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+    flex-direction: column;
+    padding-left: 0px;
+}
+
+.side-menu ul {
+
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.side-menu li {
+    margin-top: 30px;
+    font-size: 23px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 30px;
+    cursor: pointer;
+}
+
+.divider {
+    width: 3px;
+    border-radius: 5px;
+    height: 100px;
+    background-color: white;
+    margin-top: auto; /* Positions the divider at the bottom of the menu */
+    border: none;
+    position: absolute;
+    left: 160px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.app-container {
+    position: absolute;
+    top: 150px;
+    display: flex;
+    flex-wrap: wrap; /* Allows apps to wrap to the next line if needed */
+    justify-content: space-around; /* Evenly distributes the apps */
+    gap: 20px; /* Adds space between the apps */
+    padding: 20px;
+    height: calc(100vh - 190px);
+    left: 210px;
+    width: (100vw - 210px);
+    overflow:auto;
+}
+
+.app-panel {
+    width: 300px;
+    height: 200px;
+    background-color: rgb(var(--background-color), .3);
+    display: flex;
+    flex-direction: column; /* Stack the background and title vertically */
+    justify-content: flex-end; /* Push the title container to the bottom */
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Inter';
+    color: #000;
+    font-weight: 500;
+    overflow: hidden;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+.app-title-container {
+    background-color: rgba(var(--background-color), 0.9); /* Background for the title */
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+    height: 20%; /* Title takes up 20% of the panel */
+    display: flex;
+    align-items: center; /* Vertically center the title text */
+    color: rgba(var(--background-color));
+
+}
+
+.app-title {
+    font-size: 20px;
+    font-weight: 500;
+    font-family: 'Inter';
+    -webkit-filter: invert(100%);
+    filter: invert(100%);
+}
+
+.app-panel::before {
+    content: "";
+    flex: 1; /* Background takes up 80% */
+    background-size: cover;
+    background-position: center;
+    display: block;
+}
+@media (max-width: 600px) {
+    .app-container {
+        top: 130px;
+        left: 0px;
+    }
+    .title {
+        font-size: 35px;
+        position: absolute; /* Changed to relative for proper placement */
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    #apps-container {
+        padding: 25px 0 0 0;
+    }
+
+    .side-menu {
+        flex-direction: row;
+        width: 100vw;
+        position: absolute; /* Adjust for normal flow at top */
+        top: 105px;
+        transform: none;
+    }
+    
+    .side-menu ul {
+        display: flex; /* Make sure the items are displayed in a row */
+        justify-content: space-around; /* Add spacing between the items */
+        padding-left: 0; /* Ensure no padding on the left */
+    }
+
+    .side-menu li {
+        font-size: 18px;
+        margin: 0 10px; /* Add horizontal spacing between items */
+    }
+
+    .divider {
+        display: none; /* Divider is unnecessary for the top menu */
+    }
+}

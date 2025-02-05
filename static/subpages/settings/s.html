@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body,html {
+        background-image: none;
+    }
+    </style>
+</head>
+<body>
+    <div id="settings-container">
+        <h1 class="title">Settings</h1>
+        <div class="side-menu">
+            <ul>
+                <li id="general-menu">General</li>
+                <li id="appearance-menu">Appearance</li>
+                <li id="cache-menu">Cache</li>
+                <li id="extensions-menu">Extensions</li>
+            </ul>
+            <div class="divider"></div>
+        </div>
+    
+        <!-- Four separate divs for each page -->
+        <div id="general-settings" class="settings-page">
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Tab Cosmetic Presets
+                </p>
+                <p class="settings-desc">
+                    Change the look of the tab.
+                </p>
+                <select class="settings-select" onchange="tabSwitch(this)">
+                    <option value="blank">Pick from the list</option>
+                    <option value="Schoology">Schoology</option>
+                    <option value="Google Classroom">Google Classroom</option>
+                    <option value="Google Docs">Google Docs</option>
+                    <option value="Google">Google</option>
+                    <option value="Canvas">Canvas</option>
+                    <option value="Khan Academy">Khan Academy</option>
+                    <option value="Wikipedia">Wikipedia</option>
+                    <option value="Reset">Reset Cosmetic Options</option>
+                    </select>
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Custom Title
+                </p>
+                <p class="settings-desc">
+                    Change the title of the tab. Enter 'reset' to reset.
+                </p>
+                <input class="settings-input" type="text" id='titleChange' placeholder="Enter the desired title" onchange="cloakTitle(this.value)">
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Custom Icon
+                </p>
+                <p class="settings-desc">
+                    Change the icon of the tab. Enter 'reset' to reset.
+                </p>
+                <input class="settings-input" type="text" id='iconChange' placeholder="Enter the favicon URL" onchange="cloakFavicon(this.value)">
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Search Engine
+                </p>
+                <p class="settings-desc">
+                    Change the search engine.
+                </p>
+                <select class="settings-select" onchange="changeEngine(this)">
+                    <option id="changeEngineFirst" value="blank">Pick from the list</option>
+                    <option value="Google">Google Search</option>
+                    <option value="Bing">Bing Search</option>
+                    <option value="DuckDuckGo">DuckDuckGo Search</option>
+                    </select>
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Panic Settings
+                </p>
+                <p class="settings-desc">
+                    Quickly exit the proxy with the press of a key. Rapidly press ESC 5 or more times to reset.
+                </p>
+                <input class="settings-input" readonly="" id="panic" type="text" style="margin-top: 60px;" placeholder="Enter your panic key(s)" onclick="recordKeys(this, 2000);">
+                <input class="settings-input" id="panicURL" type="text" style="margin-top: 100px;" placeholder="Enter the panic URL" onchange="changePanicUrl(this.value);">
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Tab Cloaking
+                </p>
+                <p class="settings-desc">
+                    Cloak the tab with the about:blank method.
+                </p>
+                <button class="settings-button" onclick="autoLaunch();" style="margin-top: 60px;" id="autoLaunch">Toggle Autolauch</button>
+                <button class="settings-button" onclick="onetimeLaunch();" style="margin-top: 100px;" id="autoLaunch">One-Time Launch</button>
+            </div>
+        </div>
+        <div id="appearance-settings" class="settings-page">
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Theme
+                </p>
+                <p class="settings-desc">
+                    Switch between dark and light mode.
+                </p>
+                <select class="settings-select" onchange="changeTheme(this.value)">
+                    <option value="blank">Pick from the list</option>
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                </select>
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Custom Theme
+                </p>
+                <p class="settings-desc">
+                    Set a custom background and color. Reset the background by typing 'reset'.
+                </p>
+                <input class="settings-input" id="backgroundChanger" type="text" placeholder="Enter the image URL" style="margin-top: 60px;" onchange="changeBackground(this.value);">
+                <input class="settings-input" id="hexChanger" type="text" placeholder="Enter the Hex Color Code" style="margin-top: 100px;" onchange="changeTheme(this.value);">
+            </div>
+        </div>
+        <div id="cache-settings" class="settings-page">
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Clear Local Storage Cache
+                </p>
+                <button class="settings-button" onclick="clearLocalStorage();">Execute</button>
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Unregister Service Workers
+                </p>
+                <button class="settings-button" onclick="unregisterServiceWorkers();">Execute</button>
+            </div>
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Re-Register Service Workers
+                </p>
+                <button class="settings-button" onclick="reRegisterServiceWorkers();">Execute</button>
+            </div>
+            </div>
+        <div id="extensions-settings" class="settings-page">
+            <div class="settings-container">
+                <div class="settings-panel"></div>
+                <p class="settings-title">
+                    Coming Soon!
+                </p>
+                <p class="settings-desc">
+                    Next update!
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

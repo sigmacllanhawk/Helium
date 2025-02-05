@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Info</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 97vh;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: rgb(255,255,255,.3);
+
+        }
+        .container {
+            padding: 20px;
+        }
+        .session-id {
+            font-size: 18px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-button {
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Session ID</h1>
+        <div class="session-id" id="session-id">Loading...</div>
+        <button class="admin-button" onclick="window.location.href='/admin'">Go to Admin</button>
+    </div>
+    <script>
+        document.getElementById("session-id").textContent = parent.localStorage.getItem("session_id") || "No session ID found";
+    </script>
+</body>
+</html>
