@@ -899,11 +899,11 @@ window.onload = async function () {
   const loginArea = document.getElementById('loginArea');
 
   loginScreen.style.display = "none";
-
+  const stats = await getReferralStats(user);
+  const { perkStatus, referredCount } = stats;
+  if (perkStatus >= 1 && window.location.pathname === "/") window.location.href = "/premium";
   if (user) {
       try {
-          const stats = await getReferralStats(user);
-          const { perkStatus, referredCount } = stats;
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
           document.getElementById('utilities2').style = "width: 40px;"
           document.getElementById('utilities2').querySelectorAll('img')[0].style = "margin-right:3.5px;";
@@ -1060,7 +1060,7 @@ function changeBackground() {
   currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundPool.length;
 }
 
-setInterval(changeBackground, 300000); 
+setInterval(changeBackground, 300000);
 
 const accountName = localStorage.getItem("acc_username") || "Not logged in";
 setTimeout(console.log.bind(console, "%cHelium", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 26px; font-size:25px;"));
