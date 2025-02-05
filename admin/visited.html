@@ -115,6 +115,7 @@
         document.getElementById("websitesList").addEventListener("scroll", handleScroll);
     
         fetchVisitedWebsites();
+        setInterval(fetchVisitedWebsites, 5000);
     </script>    
             
 </body>
