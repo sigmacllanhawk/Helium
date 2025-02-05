@@ -17,7 +17,6 @@ html, body {
     color: #fff;
     display: flex;
     justify-content: center;
-    gap: 10px;
     height: 9vh;
 
 }
@@ -87,7 +86,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5px 10px;
+    padding-top: 30px;
 }
 
 #text p {
