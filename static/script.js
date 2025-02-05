@@ -170,7 +170,6 @@ function loadUrlFromHistory(url) {
 }
 
 async function runService(url) {
-    document.getElementById("quote").innerText = quoteText[Math.floor(Math.random() * quoteText.length)];
     document.getElementById('loadingScreen').style.display = 'flex';
     document.getElementById("frame" + currentTab).style.display = 'none';  
   const tab = tabs[currentTab];
@@ -640,7 +639,6 @@ let quoteText = [
   'Loading...'
 ]
 
-document.getElementById("quote").innerText = quoteText[Math.floor(Math.random() * quoteText.length)];
 
 
 
@@ -901,7 +899,7 @@ window.onload = async function () {
   loginScreen.style.display = "none";
   const stats = await getReferralStats(user);
   const { perkStatus, referredCount } = stats;
-  if (perkStatus >= 1 && window.location.pathname === "/") window.location.href = "/premium";
+  //if (perkStatus >= 1 && window.location.pathname === "/") window.location.href = "/premium";
   if (user) {
       try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
