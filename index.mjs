@@ -74,7 +74,7 @@ function saveData() {
     for (const username in referrals) {
         dataToSave[username] = {
             referralLinks: referrals[username].referralLinks,
-            referredUsers: Array.from(referrals[username].referredUsers), // Convert Set to Array
+            referredUsers: Array.from(referrals[username].referredUsers), 
             perkStatus: referrals[username].perkStatus
         };
     }
@@ -85,7 +85,7 @@ function saveData() {
 if (fs.existsSync(PORN_BLOCK_FILE)) {
     try {
         const data = fs.readFileSync(PORN_BLOCK_FILE, "utf-8").split("\n");
-        pornDomains = new Set(data.map(domain => domain.trim())); // Store in a Set for fast lookup
+        pornDomains = new Set(data.map(domain => domain.trim())); 
         console.log(`Loaded ${pornDomains.size} porn domains.`);
     } catch (error) {
         console.error("Error reading porn-block.txt:", error);
@@ -94,7 +94,6 @@ if (fs.existsSync(PORN_BLOCK_FILE)) {
     console.warn("porn-block.txt not found!");
 }
 
-// Load existing sessions
 if (fs.existsSync(SESSION_DATA_FILE)) {
     try {
         const data = fs.readFileSync(SESSION_DATA_FILE, "utf-8");
@@ -107,19 +106,16 @@ if (fs.existsSync(SESSION_DATA_FILE)) {
     fs.writeFileSync(SESSION_DATA_FILE, JSON.stringify({}, null, 2));
 }
 
-// Save sessions (excluding timeouts)
 function saveSessions() {
     fs.writeFileSync(SESSION_DATA_FILE, JSON.stringify(sessions, null, 2));
 }
 
-// Ensure session exists
 function ensureSession(sessionId) {
     if (!sessions[sessionId]) {
         sessions[sessionId] = { logs: [], lastOnline: 0, status: "Offline", banned: false };
     }
 }
 
-// Convert time difference to human-readable format
 function timeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     if (seconds < 60) return `${seconds} seconds ago`;
@@ -168,19 +164,18 @@ fastify.register(fastifyStatic, {
 });
 fastify.post("/ban/:id", async (request, reply) => {
     const { id } = request.params;
-    const { message, duration } = request.body; // Get the ban message and duration (optional)
+    const { message, duration } = request.body;
     
     ensureSession(id);
 
     if (!sessions[id].banned) {
-        sessions[id].banMessage = message || "You have been banned."; // Store message
+        sessions[id].banMessage = message || "You have been banned."; 
         sessions[id].banned = true;
         
         if (duration) {
-            const expiresAt = Date.now() + duration * 60000; // Convert minutes to milliseconds
+            const expiresAt = Date.now() + duration * 60000;
             sessions[id].banExpires = expiresAt;
             
-            // Schedule automatic unban
             setTimeout(() => {
                 sessions[id].banned = false;
                 delete sessions[id].banExpires;
@@ -201,7 +196,6 @@ fastify.post("/ban/:id", async (request, reply) => {
 });
 
 
-// New route to get the ban message
 fastify.get("/ban/message/:id", async (request, reply) => {
     const { id } = request.params;
     ensureSession(id);
@@ -210,9 +204,8 @@ fastify.get("/ban/message/:id", async (request, reply) => {
     if (sessions[id].banExpires) {
         const timeLeft = sessions[id].banExpires - Date.now();
         if (timeLeft > 0) {
-            remainingTime = formatTime(Math.ceil(timeLeft / 60000)); // Convert ms to formatted time
+            remainingTime = formatTime(Math.ceil(timeLeft / 60000)); 
         } else {
-            // Auto-remove expired ban
             sessions[id].banned = false;
             delete sessions[id].banExpires;
             delete sessions[id].banMessage;
@@ -232,7 +225,7 @@ fastify.post("/login", async (request, reply) => {
     const { password } = request.body;
     if (password === PASSWORD) {
         reply
-            .setCookie("admin_session", "true", { path: "/admin", httpOnly: true }) // ✅ Set cookie properly
+            .setCookie("admin_session", "true", { path: "/admin", httpOnly: true })
             .send({ success: true });
     } else {
         reply.send({ success: false });
@@ -244,14 +237,13 @@ fastify.post("/logout", async (request, reply) => {
         .send({ success: true });
 });
 
-// Middleware to check authentication
 fastify.addHook("preHandler", async (request, reply) => {
-    const allowedRoutes = ["/admin/login", "/login.html", "/login"]; // Allow access to login page
+    const allowedRoutes = ["/admin/login", "/login.html", "/login"]; 
     if (!allowedRoutes.includes(request.url) && request.url.startsWith("/admin")) {
         const isLoggedIn = request.cookies?.admin_session === "true";
 
         if (!isLoggedIn) {
-            return reply.redirect("/admin/login"); // Redirect only if not logged in
+            return reply.redirect("/admin/login");
         }
     }
 });
@@ -275,7 +267,6 @@ fastify.post("/log", async (request, reply) => {
     reply.send({ status: "ok" });
 });
 
-// Heartbeat tracking
 fastify.post("/heartbeat", async (request, reply) => {
     const sessionId = request.headers["x-session-id"] || "MISSING_SESSION_ID";
     const timestamp = Date.now();
@@ -288,12 +279,10 @@ fastify.post("/heartbeat", async (request, reply) => {
     sessions[sessionId].lastOnline = timestamp;
     sessions[sessionId].status = "Online";
 
-    // Clear any previous timeout
     if (timeouts[sessionId]) {
         clearTimeout(timeouts[sessionId]);
     }
 
-    // Set a timeout to mark the session as Offline after 12 seconds
     timeouts[sessionId] = setTimeout(() => {
         sessions[sessionId].status = "Offline";
         saveSessions();
@@ -309,7 +298,6 @@ fastify.post("/admin/broadcast", async (request, reply) => {
         return reply.status(400).send({ error: "Message and background color are required." });
     }
 
-    // Broadcast message to all active sessions
     for (const sessionId in sessions) {
         if (sessions[sessionId].status === "Online") {
             sessions[sessionId].lastMessage = { message, bgColor };
@@ -328,7 +316,7 @@ fastify.get("/get-broadcasts/:sessionId", async (request, reply) => {
     }
 
     const messageData = sessions[sessionId].lastMessage;
-    delete sessions[sessionId].lastMessage; // Clear after sending
+    delete sessions[sessionId].lastMessage; 
 
     reply.send(messageData);
 });
@@ -343,7 +331,6 @@ fastify.post("/admin/message", async (request, reply) => {
         return reply.status(404).send({ error: "Session not found." });
     }
 
-    // Store the message for the specific session
     sessions[sessionId].lastMessage = { message, bgColor };
     saveSessions();
 
@@ -358,13 +345,13 @@ fastify.get("/get-message/:sessionId", async (request, reply) => {
     }
 
     const messageData = sessions[sessionId].lastMessage;
-    delete sessions[sessionId].lastMessage; // Clear after sending
+    delete sessions[sessionId].lastMessage; 
 
     reply.send(messageData);
 });
 
 fastify.get("/visited-websites", async (request, reply) => {
-    let category = request.query.category || "all"; // Default: "all"
+    let category = request.query.category || "all"; 
 
     let allLogs = [];
 
@@ -378,23 +365,21 @@ fastify.get("/visited-websites", async (request, reply) => {
         });
     });
 
-    // Sort by most recent first
     allLogs.sort((a, b) => b.timestamp - a.timestamp);
 
     if (category === "porn") {
         allLogs = allLogs.filter(entry => {
             try {
                 let urlObj = new URL(entry.url);
-                let baseDomain = urlObj.hostname.replace(/^www\./, ""); // Remove "www."
+                let baseDomain = urlObj.hostname.replace(/^www\./, ""); 
 
-                // Ignore localhost and internal URLs
                 if (baseDomain === "localhost" || baseDomain.endsWith(".local")) {
                     return false;
                 }
 
-                return pornDomains.has(baseDomain); // Exact match check
+                return pornDomains.has(baseDomain); 
             } catch (error) {
-                return false; // Skip invalid URLs
+                return false; 
             }
         });
     }
@@ -403,7 +388,6 @@ fastify.get("/visited-websites", async (request, reply) => {
 });
 
 
-// Get all sessions sorted by online status
 fastify.get("/sessions", async (request, reply) => {
     const sessionList = Object.entries(sessions).map(([id, data]) => {
         let status = data.status;
@@ -426,20 +410,18 @@ fastify.get("/sessions", async (request, reply) => {
 
 
 
-// Get session details
 fastify.get("/sessions/:id", async (request, reply) => {
     const { id } = request.params;
     ensureSession(id);
 
     let session = sessions[id];
-    let formattedDuration = "Unlimited"; // Default to unlimited
+    let formattedDuration = "Unlimited"; 
 
     if (session.banned && session.banExpires) {
         const timeLeft = session.banExpires - Date.now();
         if (timeLeft > 0) {
-            formattedDuration = formatTime(Math.ceil(timeLeft / 60000)); // Convert ms to formatted time
+            formattedDuration = formatTime(Math.ceil(timeLeft / 60000)); 
         } else {
-            // Auto-remove expired ban
             session.banned = false;
             delete session.banExpires;
             delete session.banMessage;
@@ -454,7 +436,7 @@ fastify.get("/sessions/:id", async (request, reply) => {
         lastVisited: session.logs.length ? session.logs[session.logs.length - 1] : null,
         banned: session.banned,
         banReason: session.banned ? (session.banMessage || "No reason provided.") : null,
-        banDuration: formattedDuration, // Ensure this is a formatted string
+        banDuration: formattedDuration, 
         logs: session.logs
     });
 });
@@ -475,7 +457,6 @@ fastify.post('/gpt/', async (request, reply) => {
                 "x-wp-nonce": xpnonce
             },
             body: JSON.stringify(request.body),
-            agent
         });
 
         reply.header('Content-Type', response.headers.get('content-type'));
@@ -525,7 +506,7 @@ fastify.post('/acc/login', async (request, reply) => {
     }
 
     reply
-        .setCookie("session", username, { path: "/", maxAge: 86400 }) // 1-day session
+        .setCookie("session", username, { path: "/", maxAge: 86400 })
         .send({ success: true, message: "Login successful.", session: username });
 });
 
@@ -543,7 +524,6 @@ fastify.get('/acc/session', async (request, reply) => {
     reply.send({ success: true, username: session });
 });
 
-// Dynamically recalculate perk level based on referrals
 function calculatePerkStatus(referredCount, manualPerk) {
     let referralPerk = 0;
     if (referredCount >= 20) {
@@ -553,12 +533,9 @@ function calculatePerkStatus(referredCount, manualPerk) {
     } else if (referredCount >= 5) {
         referralPerk = 1;
     }
-
-    // If manually set perk is higher, keep it
     return Math.max(referralPerk, manualPerk);
 }
 
-// Update perk level dynamically when a user gets a new referral
 fastify.post('/acc/visit-referral', async (request, reply) => {
     let { referralCode, sessionId } = request.body;
 
@@ -566,7 +543,6 @@ fastify.post('/acc/visit-referral', async (request, reply) => {
         return reply.status(400).send({ error: "Session ID is required." });
     }
 
-    // Find the referrer
     let referrer = Object.keys(referrals).find(username =>
         referrals[username].referralLinks.includes(referralCode)
     );
@@ -579,10 +555,8 @@ fastify.post('/acc/visit-referral', async (request, reply) => {
         return reply.status(400).send({ error: "This session has already been used for a referral." });
     }
 
-    // Add referral
     referrals[referrer].referredUsers.add(sessionId);
 
-    // Recalculate perk level dynamically
     const referredCount = referrals[referrer].referredUsers.size;
     const manualPerk = referrals[referrer].perkStatus || 0;
     referrals[referrer].perkStatus = calculatePerkStatus(referredCount, manualPerk);
@@ -607,7 +581,6 @@ fastify.post('/acc/get-referral-stats', async (request, reply) => {
         referralLinks: userReferrals.referralLinks
     });
 });
-// Middleware to check if the user is an admin
 function isAdmin(request) {
     return request.cookies?.admin_session === "true";
 }
@@ -615,7 +588,6 @@ function isAdmin(request) {
 fastify.post('/acc/set-perk-level', async (request, reply) => {
     const { username, perkLevel } = request.body;
 
-    // Validate perk level
     let requiredReferrals = 0;
     if (perkLevel >= 3) {
         requiredReferrals = 20;
@@ -627,23 +599,19 @@ fastify.post('/acc/set-perk-level', async (request, reply) => {
         return reply.status(400).send({ error: "Invalid perk level." });
     }
 
-    // Create user in account_data.json if not exists
     if (!accounts[username]) {
-        accounts[username] = { hashedPassword: null }; // No password assigned
+        accounts[username] = { hashedPassword: null }; 
         fs.writeFileSync(ACCOUNT_DATA_FILE, JSON.stringify(accounts, null, 2));
     }
 
-    // Create referral data if not exists
     if (!referrals[username]) {
         referrals[username] = { referredUsers: new Set(), referralLinks: [], perkStatus: 0 };
     }
 
-    // Ensure user has the required referrals, add placeholders if needed
     while (referrals[username].referredUsers.size < requiredReferrals) {
         referrals[username].referredUsers.add(`placeholder-${referrals[username].referredUsers.size + 1}`);
     }
 
-    // Set the user's perk level
     referrals[username].perkStatus = perkLevel;
     fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
 
@@ -654,23 +622,18 @@ fastify.post('/acc/set-perk-level', async (request, reply) => {
 fastify.post('/acc/delete-account', async (request, reply) => {
     const { username } = request.body;
 
-    // Check if user exists in account_data.json
     if (!accounts[username]) {
         return reply.status(404).send({ error: "User not found in account_data.json." });
     }
 
-    // Remove user from account_data.json
     delete accounts[username];
 
-    // Remove user from referrals_data.json if exists
     if (referrals[username]) {
         delete referrals[username];
     }
 
-    // Save updated account data
     fs.writeFileSync(ACCOUNT_DATA_FILE, JSON.stringify(accounts, null, 2));
 
-    // Save updated referral data
     fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
 
     reply.send({ success: true, message: `Account ${username} deleted from all records.` });
@@ -683,18 +646,15 @@ fastify.get("/uv/uv.config.js", (req, res) => {
 fastify.get('/ip/', async (request, reply) => {
     try {
       const response = await axios.get('https://api.ipify.org?format=json');
-      reply.send(response.data); // No need to stringify, Fastify handles JSON by default
+      reply.send(response.data); 
     } catch (error) {
       console.error('Error fetching data:', error);
       reply.code(500).send({ error: 'Failed to fetch IP' });
     }
   });
-// Fetch list of all accounts with referral stats (Paginated)
-// Fetch list of all accounts with referral stats (Merged from both files)
 fastify.get('/acc/get-referral-stats-list', async (request, reply) => {
     const page = parseInt(request.query.page) || 1;
 
-    // Load account data (usernames & passwords)
     let accountsData = {};
     if (fs.existsSync(ACCOUNT_DATA_FILE)) {
         try {
@@ -704,16 +664,14 @@ fastify.get('/acc/get-referral-stats-list', async (request, reply) => {
         }
     }
 
-    // Merge account data with referral data
     const accountsArray = Object.keys(accountsData).map(username => ({
         username,
-        passwordHash: accountsData[username].hashedPassword, // From account_data.json
-        referredCount: referrals[username]?.referredUsers?.size || 0, // From referrals_data.json
+        passwordHash: accountsData[username].hashedPassword,
+        referredCount: referrals[username]?.referredUsers?.size || 0, 
         perkStatus: referrals[username]?.perkStatus || 0,
         referralLinks: referrals[username]?.referralLinks || []
     }));
 
-    // Pagination: 15 accounts per page
     const accountsPerPage = 15;
     const start = (page - 1) * accountsPerPage;
     const paginatedAccounts = accountsArray.slice(start, start + accountsPerPage);
@@ -748,7 +706,6 @@ fastify.get("/banned", async (request, reply) => {
 fastify.get('/share/:referralCode', async (request, reply) => {
     const referralCode = request.params.referralCode;
 
-    // Serve a temporary page that logs the referral and redirects
     reply.type('text/html').send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -788,12 +745,10 @@ fastify.get('/share/:referralCode', async (request, reply) => {
         return;
     }
 
-    // Get referral code from URL without regex
     const urlParts = window.location.pathname.split("/");
-    const referralCode = urlParts[urlParts.length - 1]; // Last part of URL
+    const referralCode = urlParts[urlParts.length - 1]; 
     console.log("Referral Code:", referralCode);
 
-    // Send referral to backend
     try {
         const response = await fetch("/acc/visit-referral", {
             method: "POST",
@@ -811,7 +766,6 @@ fastify.get('/share/:referralCode', async (request, reply) => {
         console.error("Error sending referral request:", error);
     }
 
-    // Redirect to index.html after 2 seconds
     setTimeout(() => {
         window.location.href = "/";
     }, 2000);
@@ -897,6 +851,3 @@ fastify.listen({
     port: port,
     host: "0.0.0.0",
 });
-
-//setTimeout(fetchXpnonce,1000);
-//setInterval(fetchXpnonce, 3 * 60 * 60 * 1000);
