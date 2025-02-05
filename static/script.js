@@ -1033,6 +1033,34 @@ async function checkForIndividualMessages() {
 
 setInterval(checkForIndividualMessages, 5000);
 setInterval(checkForGlobalMessages, 5000);
+
+const backgroundPool = [
+  'assets/otherBackground1.png',
+  'assets/otherBackground2.png',
+  'assets/otherBackground3.png',
+  'assets/otherBackground4.png',
+  'assets/otherBackground5.png',
+  'assets/otherBackground6.png',
+  'assets/otherBackground7.png',
+  'assets/otherBackground8.png',
+  'assets/otherBackground9.png',
+  'assets/defaultBackground.png',
+];
+
+let currentBackgroundIndex = 0;
+
+function changeBackground() {
+  if (localStorage.getItem('backgroundUrl')) return;
+  const root = document.documentElement;
+  const nextBackground = backgroundPool[currentBackgroundIndex];
+
+  root.style.setProperty('--background', `url(${nextBackground})`);
+
+  currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundPool.length;
+}
+
+setInterval(changeBackground, 300000); 
+
 const accountName = localStorage.getItem("acc_username") || "Not logged in";
 setTimeout(console.log.bind(console, "%cHelium", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 26px; font-size:25px;"));
 setTimeout(console.log.bind(console, "%cIf you are seeing this, the main script system has loaded.", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 20px; font-size:18px;"));
