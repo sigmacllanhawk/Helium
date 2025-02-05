@@ -299,15 +299,13 @@ function addTab() {
 
   const newIframe = document.createElement('iframe');
 
-// Get the parent element
 const parentElement = document.getElementById('iframeOverlay');
 
-// Ensure the parent element exists
 if (parentElement) {
     newIframe.src = "/subpages/landing/l.html";
     newIframe.id = "frame" + newTabIndex;
-    newIframe.style.display = "block"; // Correct way to hide it
-    parentElement.appendChild(newIframe); // Actually appends it to the DOM
+    newIframe.style.display = "block";
+    parentElement.appendChild(newIframe);
 } else {
     console.error("Parent element 'iframeOverlay' not found.");
 }
@@ -410,15 +408,12 @@ function closeTab(tabIndex) {
 
   if (tabIndex < 0 || tabIndex >= allTabs.length) return;
 
-  // Remove the tab and its corresponding iframe
   allTabs[tabIndex].remove();
   allFrames[tabIndex].remove();
   tabs.splice(tabIndex, 1);
 
-  // Reassign IDs and event handlers for all tabs and frames
   reassignTabIndices();
 
-  // Update the currently selected tab
   if (currentTab >= tabs.length) {
     currentTab = tabs.length - 1;
   }
@@ -455,10 +450,10 @@ function openHamburgerMenu() {
 
   if (menu.style.display === 'none' || menu.style.display === '') {
       menu.style.display = 'block';
-      ignoreClose = true; // Prevent immediate close
+      ignoreClose = true; 
 
       setTimeout(() => {
-          ignoreClose = false; // Allow closing after opening animation
+          ignoreClose = false; 
           document.getElementById('iframeOverlay').addEventListener('click', closeOnClickOutside);
       }, 50);
 
@@ -481,7 +476,6 @@ function closeOnClickOutside(event) {
 
   if (ignoreClose) return;
 
-  // `offsetParent !== null` is a reliable check for visibility
   if (menu && menu.offsetParent !== null && !menu.contains(event.target)) {
       closeHamburgerMenu();
   }
@@ -718,7 +712,6 @@ async function logWebsiteVisit(url) {
   }
 }
 
-// Function to generate a session ID if not available
 function generateSessionId() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
       const r = (Math.random() * 16) | 0;
@@ -768,7 +761,6 @@ async function createAccount(username, password, vpassword) {
   errorElement.style.display = "none";
   errorElement.textContent = "";
 
-  // Check if passwords match first
   if (vpassword !== password) {
       errorElement.style.display = "block";
       errorElement.textContent = "Passwords do not match.";
@@ -776,7 +768,6 @@ async function createAccount(username, password, vpassword) {
       return;
   }
 
-  // Check if password meets length and number requirements
   const hasMinLength = password.length >= 8;
   const hasMinNumbers = (password.match(/\d/g) || []).length >= 2;
 
@@ -786,7 +777,6 @@ async function createAccount(username, password, vpassword) {
       return;
   }
 
-  // Proceed if validation passes
   const hashedPassword = await hashPassword(password);
   console.log(`Hashed password for ${username}: ${hashedPassword}`); 
 
@@ -818,10 +808,8 @@ async function login(username, password) {
 
   const data = await response.json();
   if (response.ok) {
-      // Store username in localStorage
       localStorage.setItem("acc_username", username);
 
-      // Store session in cookies (or localStorage if needed)
       document.cookie = `session=${username}; path=/; max-age=86400`; // 1-day session
       location.reload();
     } else {
@@ -831,16 +819,11 @@ async function login(username, password) {
 
 
 function logout() {
-  // Remove stored username
   localStorage.removeItem("acc_username");
-
-  // Clear session
   document.cookie = "session=; path=/; max-age=0";
-
   location.reload()
 }
 
-// Generate a random 7-character referral code
 function generateReferralCode() {
   return Math.random().toString(36).substr(2, 7);
 }
@@ -860,7 +843,6 @@ async function createReferralLink() {
   const referralCode = generateReferralCode();
   const referralLink = `${window.location.origin}/share/${referralCode}`;
 
-  // Send the referral code to the backend
   const response = await fetch('/acc/store-referral', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -879,7 +861,6 @@ async function createReferralLink() {
   return referralLink;
 }
 
-// Run on page load to check for referral visits
 async function getReferralStats(username) {
   try {
       const response = await fetch("/acc/get-referral-stats", {
@@ -916,7 +897,6 @@ window.onload = async function () {
   const loginScreen = document.getElementById('loginScreen');
   const loginArea = document.getElementById('loginArea');
 
-  // Make sure the page starts hidden
   loginScreen.style.display = "none";
 
   if (user) {
@@ -982,7 +962,6 @@ window.onload = async function () {
   }
 };
 
-// Function to open the page
 function openPage() {
     const loginScreen = document.getElementById('loginScreen');
     loginScreen.style.display = "block";
@@ -991,7 +970,6 @@ function openPage() {
     }, 10);
 }
 
-// Function to close the page
 function closePage() {
     const loginScreen = document.getElementById('loginScreen');
     loginScreen.style.opacity = "0";
@@ -1010,12 +988,10 @@ function hideonLoadpopup() {
 document.addEventListener("DOMContentLoaded", function () {
   const popup = document.getElementById("onLoadPopup");
 
-  // Show the popup with fade-in effect
   setTimeout(() => {
       popup.classList.add("show");
   }, 100);
 
-  // Close the popup when clicking outside of it
   document.addEventListener("click", function (event) {
       if (!popup.contains(event.target)) {
           popup.classList.remove("show");
