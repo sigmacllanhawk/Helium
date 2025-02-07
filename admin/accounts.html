@@ -65,7 +65,7 @@ async function deleteAccount(username) {
     }
 }
 async function setPerkLevel(username) {
-    const perkLevel = prompt(`Enter new perk level for ${username} (1-3):`);
+    const perkLevel = prompt(`Enter new perk level for ${username} (0-3):`);
     if (!perkLevel || isNaN(perkLevel) || perkLevel < 0 || perkLevel > 3) {
         alert("Invalid perk level.");
         return;
