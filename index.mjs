@@ -593,13 +593,13 @@ fastify.post('/acc/set-perk-level', async (request, reply) => {
     const { username, perkLevel } = request.body;
 
     let requiredReferrals = 0;
-    if (perkLevel >= 3) {
+    if (perkLevel == 3) {
         requiredReferrals = 20;
-    } else if (perkLevel >= 2) {
+    } else if (perkLevel == 2) {
         requiredReferrals = 10;
-    } else if (perkLevel >= 1) {
+    } else if (perkLevel == 1) {
         requiredReferrals = 5;
-    } else if (perklevel == 0) {
+    } else if (perkLevel == 0) {
         requiredReferrals = 0;
     } else {
         return reply.status(400).send({ error: "Invalid perk level." });
