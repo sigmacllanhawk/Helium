@@ -239,7 +239,12 @@ fastify.post("/logout", async (request, reply) => {
 
 fastify.addHook("preHandler", async (request, reply) => {
     const allowedRoutes = ["/admin/login", "/login.html", "/login"]; 
-    if (!allowedRoutes.includes(request.url) && request.url.startsWith("/admin")) {
+    if (
+        !allowedRoutes.includes(request.url) &&
+        (request.url.startsWith("/admin") || 
+        request.url === "/acc/set-perk-level" || 
+        request.url === "/acc/delete-account")
+    ) {
         const isLoggedIn = request.cookies?.admin_session === "true";
 
         if (!isLoggedIn) {
@@ -586,6 +591,7 @@ function isAdmin(request) {
 }
 
 fastify.post('/acc/set-perk-level', async (request, reply) => {
+    
     const { username, perkLevel } = request.body;
 
     let requiredReferrals = 0;
@@ -614,7 +620,7 @@ fastify.post('/acc/set-perk-level', async (request, reply) => {
 
     referrals[username].perkStatus = perkLevel;
     fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
-
+    console.log(`Perk level set to ${perkLevel} with ${requiredReferrals} referrals.`);
     reply.send({ success: true, message: `Perk level set to ${perkLevel} with ${requiredReferrals} referrals.` });
 });
 
@@ -635,7 +641,7 @@ fastify.post('/acc/delete-account', async (request, reply) => {
     fs.writeFileSync(ACCOUNT_DATA_FILE, JSON.stringify(accounts, null, 2));
 
     fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
-
+    console.log(`Account ${username} deleted from all records.`);
     reply.send({ success: true, message: `Account ${username} deleted from all records.` });
 });
 
