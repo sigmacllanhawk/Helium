@@ -899,7 +899,7 @@ window.onload = async function () {
   loginScreen.style.display = "none";
   const stats = await getReferralStats(user);
   const { perkStatus, referredCount } = stats;
-  if (perkStatus >= 1 && window.location.pathname === "/") window.location.href = "/premium";
+  //if (perkStatus >= 1 && window.location.pathname === "/") window.location.href = "/premium";
   if (user) {
       try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
