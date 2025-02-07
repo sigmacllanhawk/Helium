@@ -41,7 +41,11 @@
         function manageSession(sessionId) {
             window.location.href = `/admin/session?id=${sessionId}`;
         }
-
+        fastify.post("/logout", async (request, reply) => {
+    reply
+        .clearCookie("admin_session", { path: "/admin" })
+        .send({ success: true });
+});
         function setCategory(category) {
             selectedCategory = category;
             allWebsites = [];

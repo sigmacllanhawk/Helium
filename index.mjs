@@ -241,9 +241,7 @@ fastify.addHook("preHandler", async (request, reply) => {
     const allowedRoutes = ["/admin/login", "/login.html", "/login"]; 
     if (
         !allowedRoutes.includes(request.url) &&
-        (request.url.startsWith("/admin") || 
-        request.url === "/acc/set-perk-level" || 
-        request.url === "/acc/delete-account")
+        request.url.startsWith("/admin") 
     ) {
         const isLoggedIn = request.cookies?.admin_session === "true";
 
