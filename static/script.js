@@ -1034,14 +1034,16 @@ async function generateUserPage() {
   const { perkStatus, referredCount, generatedDomains = 0 } = stats;
 
   if (user) {
+    const hostnameParts = window.location.hostname.split('.');
+    const baseDomain = hostnameParts.slice(-2).join('.'); // Extracts the main domain (example.com)
+
     if (perkStatus >= 1) {
-      const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
-      if (!window.location.hostname.startsWith("premium.")) {
-        window.location.href = `https://premium.${baseDomain}`;
-      }
-    } else if (window.location.hostname.startsWith("premium.") && perkStatus < 1) {
-      const baseDomain = window.location.hostname.replace("premium.", "");
-      window.location.href = `https://${baseDomain}`;
+        if (!window.location.hostname.startsWith("premium.")) {
+            window.location.href = `https://premium.${baseDomain}`;
+        }
+    } else if (window.location.hostname.startsWith("premium.")) {
+        const baseDomainWithoutPremium = hostnameParts.slice(hostnameParts[0] === "premium" ? 1 : 0).join('.');
+        window.location.href = `https://${baseDomainWithoutPremium}`;
     }
           try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
