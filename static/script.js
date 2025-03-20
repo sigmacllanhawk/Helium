@@ -1033,8 +1033,12 @@ async function generateUserPage() {
   const hostnameParts = window.location.hostname.split('.');
   const baseDomain = hostnameParts.slice(-2).join('.'); // Extracts example.com
 
+  // 🛑 Prevent unnecessary redirections by tracking session-based redirects
+  if (sessionStorage.getItem("redirected")) return;
+
   if (!user) {
       if (window.location.hostname.startsWith("premium.")) {
+          sessionStorage.setItem("redirected", "true");
           window.location.href = `https://${baseDomain}`;
           return;
       }
@@ -1064,16 +1068,23 @@ async function generateUserPage() {
   }
 
   try {
+      // ✅ Ensure `perkStatus` is retrieved before making redirection decisions
       const stats = await getReferralStats(user);
       if (!stats) return;
+
       const { perkStatus, referredCount, generatedDomains = 0 } = stats;
       localStorage.setItem("perk_status", perkStatus);
 
+      // 🛑 Prevent unnecessary redirections by checking stored redirect flag
+      if (sessionStorage.getItem("redirected")) return;
+
       if (perkStatus >= 1 && !window.location.hostname.startsWith("premium.")) {
+          sessionStorage.setItem("redirected", "true");
           window.location.href = `https://premium.${baseDomain}`;
           return;
       }
       if (perkStatus < 1 && window.location.hostname.startsWith("premium.")) {
+          sessionStorage.setItem("redirected", "true");
           window.location.href = `https://${baseDomain}`;
           return;
       }
@@ -1119,7 +1130,7 @@ async function generateUserPage() {
   }
 }
 
-// Handles login, stores session, and redirects correctly
+// ✅ Handles login and prevents redirection loops
 async function handleLogin() {
   const username = document.getElementById("loginUsername").value;
   const password = document.getElementById("loginPassword").value;
@@ -1130,11 +1141,13 @@ async function handleLogin() {
       const stats = await getReferralStats(username);
       localStorage.setItem("perk_status", stats.perkStatus || "0");
 
+      sessionStorage.removeItem("redirected"); // Ensure fresh redirect handling
       location.reload();
   } else {
       document.getElementById("loginError").style.display = "block";
   }
 }
+
 
 
 
