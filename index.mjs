@@ -15,10 +15,10 @@ const SESSION_DATA_FILE = "session_data.json";
 const publicPath = join(process.cwd(), "static");
 const uvPath = join(process.cwd(), "uv");
 const PASSWORD = "sPUaR227A3V^h^68#Fs#2kLZTysRK87BR6Z998z@8X53&YTBdC%LnGpDNVvp@Q!576WF%ThPc8k6fY9H2Q@DUdV$JR%@W58%ZQGgKpU$#^TS4hD$58UgM5zP6#obti*%";
-const REFERRAL_DATA_FILE = "referrals.json";
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
 const ACCOUNT_DATA_FILE = 'account_data.json';
 const REFERRALS_DATA_FILE = 'referrals_data.json';
+const LINKS_FILE = "links.json";
 let pornDomains = new Set();
 let xpnonce = "";
 let sessions = {};
@@ -41,6 +41,43 @@ if (fs.existsSync(ACCOUNT_DATA_FILE)) {
 function saveAccounts() {
     fs.writeFileSync(ACCOUNT_DATA_FILE, JSON.stringify(accounts, null, 2));
 }
+if (!fs.existsSync(REFERRALS_DATA_FILE)) {
+    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify({}, null, 2));
+}
+
+if (!fs.existsSync(LINKS_FILE)) {
+    fs.writeFileSync(LINKS_FILE, JSON.stringify([], null, 2));
+}
+
+let links = JSON.parse(fs.readFileSync(LINKS_FILE, "utf-8") || "[]");
+
+// Load referrals data
+if (fs.existsSync(REFERRALS_DATA_FILE)) {
+    try {
+        referrals = JSON.parse(fs.readFileSync(REFERRALS_DATA_FILE, "utf-8"));
+        for (const username in referrals) {
+            referrals[username].generatedDomains = referrals[username].generatedDomains || 0;
+        }
+    } catch (error) {
+        console.error("Error loading referral data:", error);
+    }
+}
+
+function saveReferrals() {
+    const dataToSave = {};
+
+    for (const username in referrals) {
+        dataToSave[username] = {
+            referralLinks: referrals[username].referralLinks,
+            referredUsers: Array.from(referrals[username].referredUsers), // Convert Set to Array
+            perkStatus: referrals[username].perkStatus,
+            generatedDomains: referrals[username].generatedDomains || 0
+        };
+    }
+
+    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(dataToSave, null, 2));
+}
+
 
 function formatTime(minutes) {
     if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
@@ -60,15 +97,15 @@ if (fs.existsSync(REFERRALS_DATA_FILE)) {
         for (const username in data) {
             referrals[username] = {
                 referralLinks: data[username].referralLinks || [],
-                referredUsers: new Set(Array.isArray(data[username].referredUsers) ? data[username].referredUsers : []),
-                perkStatus: data[username].perkStatus || 0
+                referredUsers: new Set(data[username].referredUsers || []), // Convert to Set
+                perkStatus: data[username].perkStatus || 0,
+                generatedDomains: data[username].generatedDomains || 0
             };
         }
     } catch (error) {
         console.error("Error loading referral data:", error);
     }
 }
-
 function saveData() {
     const dataToSave = {};
     for (const username in referrals) {
@@ -540,7 +577,7 @@ function calculatePerkStatus(referredCount, manualPerk) {
 }
 
 fastify.post('/acc/visit-referral', async (request, reply) => {
-    let { referralCode, sessionId } = request.body;
+    const { referralCode, sessionId } = request.body;
 
     if (!sessionId) {
         return reply.status(400).send({ error: "Session ID is required." });
@@ -554,22 +591,32 @@ fastify.post('/acc/visit-referral', async (request, reply) => {
         return reply.status(404).send({ error: "Invalid referral link." });
     }
 
+    if (!referrals[referrer]) {
+        referrals[referrer] = { referredUsers: new Set(), referralLinks: [], perkStatus: 0, generatedDomains: 0 };
+    }
+
     if (referrals[referrer].referredUsers.has(sessionId)) {
         return reply.status(400).send({ error: "This session has already been used for a referral." });
     }
 
-    referrals[referrer].referredUsers.add(sessionId);
+    // Convert referredUsers to an array, update, and convert back to a Set
+    let referredArray = Array.from(referrals[referrer].referredUsers);
+    referredArray.push(sessionId);
+    referrals[referrer].referredUsers = new Set(referredArray);
 
+    // Update perk level
     const referredCount = referrals[referrer].referredUsers.size;
     const manualPerk = referrals[referrer].perkStatus || 0;
     referrals[referrer].perkStatus = calculatePerkStatus(referredCount, manualPerk);
 
-    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
+    // Save data to JSON file to persist changes
+    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, (key, value) =>
+        value instanceof Set ? [...value] : value, 2));
 
     reply.send({ success: true, message: `Referral added! ${referrer} now has ${referredCount} referrals.` });
 });
 
-fastify.post('/acc/get-referral-stats', async (request, reply) => {
+fastify.post("/acc/get-referral-stats", async (request, reply) => {
     const { username } = request.body;
 
     if (!username || !referrals[username]) {
@@ -578,50 +625,76 @@ fastify.post('/acc/get-referral-stats', async (request, reply) => {
 
     const userReferrals = referrals[username];
 
+    // Ensure referredUsers is properly counted
+    const referredCount = userReferrals.referredUsers ? userReferrals.referredUsers.size : 0;
+
+    // Ensure only the correct number of links is returned
+    const generatedLinks = links.slice(0, userReferrals.generatedDomains || 0);
+
+    // Send response
     reply.send({
-        referredCount: userReferrals.referredUsers.size,
-        perkStatus: userReferrals.perkStatus,
-        referralLinks: userReferrals.referralLinks
+        referredCount: referredCount,  // ✅ Count of referred users
+        perkStatus: userReferrals.perkStatus || 0,  // ✅ Current perk level
+        referralLinks: userReferrals.referralLinks || [],  // ✅ List of generated referral links
+        generatedDomains: userReferrals.generatedDomains || 0,  // ✅ Number of generated domains
+        generatedLinks: generatedLinks  // ✅ List of actual generated domains
     });
 });
+
+
+
 function isAdmin(request) {
     return request.cookies?.admin_session === "true";
 }
 
 fastify.post('/acc/set-perk-level', async (request, reply) => {
-    
     const { username, perkLevel } = request.body;
 
-    let requiredReferrals = 0;
-    if (perkLevel == 3) {
-        requiredReferrals = 20;
-    } else if (perkLevel == 2) {
-        requiredReferrals = 10;
-    } else if (perkLevel == 1) {
-        requiredReferrals = 5;
-    } else if (perkLevel == 0) {
-        requiredReferrals = 0;
-    } else {
-        return reply.status(400).send({ error: "Invalid perk level." });
+    if (!username) {
+        return reply.status(400).send({ error: "Username is required." });
     }
 
-    if (!accounts[username]) {
-        accounts[username] = { hashedPassword: null }; 
-        fs.writeFileSync(ACCOUNT_DATA_FILE, JSON.stringify(accounts, null, 2));
+    if (![0, 1, 2, 3].includes(perkLevel)) {
+        return reply.status(400).send({ error: "Invalid perk level. Must be 0, 1, 2, or 3." });
     }
+
+    if (!fs.existsSync(REFERRALS_DATA_FILE)) {
+        return reply.status(500).send({ error: "Referral data file missing." });
+    }
+
+    // Load the latest referrals data
+    referrals = JSON.parse(fs.readFileSync(REFERRALS_DATA_FILE, "utf-8"));
 
     if (!referrals[username]) {
         referrals[username] = { referredUsers: new Set(), referralLinks: [], perkStatus: 0 };
     }
 
-    while (referrals[username].referredUsers.size < requiredReferrals) {
-        referrals[username].referredUsers.add(`placeholder-${referrals[username].referredUsers.size + 1}`);
+    const requiredReferrals = { 0: 0, 1: 5, 2: 10, 3: 20 }[perkLevel];
+
+    // Convert Set to an array, update, then convert back to Set
+    let referredArray = Array.from(referrals[username].referredUsers);
+
+    while (referredArray.length < requiredReferrals) {
+        referredArray.push(`placeholder-${referredArray.length + 1}`);
     }
 
+    // Trim excess referrals if needed
+    referredArray = referredArray.slice(0, requiredReferrals);
+
+    referrals[username].referredUsers = new Set(referredArray);
     referrals[username].perkStatus = perkLevel;
-    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, null, 2));
+
+    // Save the updated referrals data
+    fs.writeFileSync(REFERRALS_DATA_FILE, JSON.stringify(referrals, (key, value) =>
+        value instanceof Set ? [...value] : value, 2));
+
     console.log(`Perk level set to ${perkLevel} with ${requiredReferrals} referrals.`);
-    reply.send({ success: true, message: `Perk level set to ${perkLevel} with ${requiredReferrals} referrals.` });
+    
+    reply.send({
+        success: true,
+        message: `Perk level set to ${perkLevel}. User now has ${requiredReferrals} referrals.`,
+        referredUsers: referredArray
+    });
 });
 
 
@@ -645,10 +718,67 @@ fastify.post('/acc/delete-account', async (request, reply) => {
     reply.send({ success: true, message: `Account ${username} deleted from all records.` });
 });
 
+fastify.post("/acc/generate-domain", async (request, reply) => {
+    const { username } = request.body;
+
+    if (!username || !referrals[username]) {
+        return reply.status(404).send({ error: "Couldn't serve you a new link! You were not found in the database or no referrals were logged for you." });
+    }
+
+    const userReferrals = referrals[username];
+
+    // Ensure referredUsers is preserved
+    if (!userReferrals.referredUsers) {
+        userReferrals.referredUsers = new Set();
+    }
+
+    const perkLevel = userReferrals.perkStatus || 0;
+
+    if (perkLevel < 2) {
+        return reply.status(403).send({ error: "Couldn't serve you a new link! Your perk level must be 2 or higher." });
+    }
+
+    userReferrals.generatedDomains = userReferrals.generatedDomains || 0;
+
+    if (perkLevel === 2 && userReferrals.generatedDomains >= 1) {
+        return reply.status(400).send({ error: "Couldn't serve you a new link! You have already generated a domain." });
+    }
+
+    if (userReferrals.generatedDomains >= links.length) {
+        return reply.status(400).send({ error: "Couldn't serve you a new link! You have generated all available links." });
+    }
+
+    const nextDomain = links[userReferrals.generatedDomains];
+    userReferrals.generatedDomains++;
+
+    // Save changes, making sure to preserve `referredUsers`
+    saveReferrals();
+
+    reply.send({
+        success: true,
+        domain: nextDomain,
+        generatedCount: userReferrals.generatedDomains,
+        referredCount: userReferrals.referredUsers.size,  // ✅ Include referredCount in the response
+        message: `You have generated ${userReferrals.generatedDomains} domain(s).`
+    });
+});
+
 fastify.get("/uv/uv.config.js", (req, res) => {
     return res.sendFile("uv/uv.config.js", publicPath);
 });
+fastify.get("/get-links", async (request, reply) => {
+    try {
+        if (!fs.existsSync(LINKS_FILE)) {
+            return reply.send([]);
+        }
 
+        const links = JSON.parse(fs.readFileSync(LINKS_FILE, "utf-8"));
+        reply.send(links);
+    } catch (error) {
+        console.error("Error fetching links:", error);
+        reply.status(500).send({ error: "Failed to retrieve links." });
+    }
+});
 fastify.get('/ip/', async (request, reply) => {
     try {
       const response = await axios.get('https://api.ipify.org?format=json');

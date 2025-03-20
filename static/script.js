@@ -834,9 +834,9 @@ async function createReferralLink() {
       return;
   }
   function thingy () {
-    document.querySelectorAll('.loginButton')[1].innerHTML = "<center><p>Copied</p></center>"
+    document.querySelectorAll('.loginButton')[2].innerHTML = "<center><p>Copied</p></center>"
     setTimeout(() => { 
-      document.querySelectorAll('.loginButton')[1].innerHTML = "<center><p>Generate Invite Code</p></center>";
+      document.querySelectorAll('.loginButton')[2].innerHTML = "<center><p>Generate Invite Code</p></center>";
   }, 2000);
     }
   const referralCode = generateReferralCode();
@@ -869,19 +869,43 @@ async function getReferralStats(username) {
       });
 
       if (!response.ok) {
-          if (response.status === 404) {
-              return { referralLinks: [], referredCount: 0, perkStatus: 0 };
+          let data;
+          try {
+              data = await response.json();
+          } catch {
+              data = { error: "Unknown error" };
           }
-          const data = await response.json().catch(() => ({}));
+
           console.error("Failed to fetch referral stats:", data.error || "Unknown error");
-          return { referralLinks: [], referredCount: 0, perkStatus: 0 };
+
+          return {
+              referredCount: 0,   // ✅ Ensure referredCount is always returned
+              perkStatus: 0,
+              referralLinks: [],
+              generatedDomains: 0,
+              generatedLinks: [],
+              error: data.error || "Request failed"
+          };
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log("Referral Stats:", data); // ✅ Debugging log
+
+      return data;
   } catch (error) {
       console.error("Error fetching referral stats:", error);
+
+      return {
+          referredCount: 0,   // ✅ Ensure referredCount is always returned
+          perkStatus: 0,
+          referralLinks: [],
+          generatedDomains: 0,
+          generatedLinks: [],
+          error: "Network error"
+      };
   }
 }
+
 
 function showLoginScreen() {
   document.getElementById('loginScreen').style.display = 'block';
@@ -892,21 +916,136 @@ function hideLoginScreen() {
 }
 
 window.onload = async function () {
+await generateUserPage();
+};
+
+function openPage() {
+    const loginScreen = document.getElementById('loginScreen');
+    loginScreen.style.display = "block";
+    setTimeout(() => {
+        loginScreen.style.opacity = "1";
+    }, 10);
+}
+
+function closePage() {
+    const loginScreen = document.getElementById('loginScreen');
+    loginScreen.style.opacity = "0";
+    setTimeout(() => {
+        loginScreen.style.display = "none";
+    }, 500);
+  }
+  async function generateNewLink() {
+    const user = localStorage.getItem("acc_username");
+
+    if (!user) {
+        notification("No user logged in.", "#ff9999");
+        return;
+    }
+
+    try {
+        const response = await fetch("/acc/generate-domain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: user }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to generate a new link.");
+        }
+
+        const { domain, generatedCount } = data;
+
+        // Copy generated link to clipboard
+        await navigator.clipboard.writeText(domain);
+        function thingy () {
+          document.querySelectorAll('.loginButton')[0].innerHTML = "<center><p>Copied</p></center>"
+          setTimeout(() => { 
+            document.querySelectorAll('.loginButton')[0].innerHTML = "<center><p>Generate New Link</p></center>";
+        }, 2000);
+
+          }
+          thingy();
+        // Update generated links count in the UI
+        const linksGeneratedText = document.getElementById("generatedLinks");
+        if (linksGeneratedText) {
+            linksGeneratedText.innerHTML = `Amount of generated links: <b>${generatedCount}</b>`;
+        }
+    } catch (error) {
+        notification(error.message, "#ff9999");
+    }
+}
+
+async function viewGeneratedLinks() {
+  const user = localStorage.getItem("acc_username");
+  if (!user) {
+      notification("No user logged in.", "#ff9999");
+      return;
+  }
+
+  try {
+      // Fetch user stats to get the number of generated domains
+      const stats = await getReferralStats(user);
+      const { generatedDomains = 0 } = stats;
+
+      if (generatedDomains === 0) {
+          notification("No links have been generated yet.", "#ff9999");
+          return;
+      }
+
+      // Fetch all available links from links.json
+      const response = await fetch("/get-links");
+      const allLinks = await response.json();
+
+      // Ensure we don't exceed available links
+      const userGeneratedLinks = allLinks.slice(0, generatedDomains);
+
+      const linksList = document.getElementById("generatedLinksList");
+      linksList.innerHTML = ""; // Clear previous list
+
+      userGeneratedLinks.forEach((link) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = link;
+          listItem.onclick = async () => {
+              await navigator.clipboard.writeText(link);
+              notification(`Copied: ${link}`, "#99ff99");
+          };
+          linksList.appendChild(listItem);
+      });
+
+      document.getElementById("generatedLinksPopup").style.display = "block";
+  } catch (error) {
+      notification("Error loading generated links.", "#ff9999");
+  }
+}
+
+function closeGeneratedLinksPopup() {
+  document.getElementById("generatedLinksPopup").style.display = "none";
+}
+
+async function generateUserPage() {
   const user = localStorage.getItem("acc_username");
   const loginScreen = document.getElementById('loginScreen');
   const loginArea = document.getElementById('loginArea');
 
   loginScreen.style.display = "none";
   const stats = await getReferralStats(user);
-  const { perkStatus, referredCount } = stats;
-  if (perkStatus >= 1) {
-    const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
-    window.location.href = `https://premium.${baseDomain}`;
-  }
+  const { perkStatus, referredCount, generatedDomains = 0 } = stats;
+
   if (user) {
-      try {
+    if (perkStatus >= 1) {
+      const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
+      if (!window.location.hostname.startsWith("premium.")) {
+        window.location.href = `https://premium.${baseDomain}`;
+      }
+    } else if (window.location.hostname.startsWith("premium.") && perkStatus < 1) {
+      const baseDomain = window.location.hostname.replace("premium.", "");
+      window.location.href = `https://${baseDomain}`;
+    }
+          try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
-          document.getElementById('utilities2').style = "width: 40px;"
+          document.getElementById('utilities2').style = "width: 40px;";
           document.getElementById('utilities2').querySelectorAll('img')[0].style = "margin-right:3.5px;";
           loginArea.innerHTML = `
               <div class="page-header">
@@ -914,29 +1053,56 @@ window.onload = async function () {
                   <button class="close-page" onclick="closePage()">✖</button>
               </div>
               <br>
-              <p class="login-subtext">Current Tier: ${perkStatus}/3</p>
-              <p class="login-subtext">People Referred: ${referredCount}</p>
-
+              <p class="login-subtext">Current Tier: <b>${perkStatus}/3</b></p>
+              <p class="login-subtext">People Referred: <b>${referredCount}</b></p>
+              <p class="login-subtext" id="generatedLinks">Amount of generated links: <b>${generatedDomains}</b></p>
+              <p class="login-subtext">Ad-Blocking: <span class="login-subtext" id="adBlockStatus"></span></p>
               <div class="popup-features">
                   <div class="popup-feature">5 Invites (Tier 1): Adblocking, immunity from bans, fast speeds</div>
-                  <div class="popup-feature">10 Invites (Tier 2): All previous features, faster speeds, change locations, 1 new domain when needed</div>
-                  <div class="popup-feature">20 Invites (Tier 3): All previous features, instant support from owner, unlimited new domains when needed</div>
+                  <div class="popup-feature">10 Invites (Tier 2): All previous features, faster speeds, 1 new link when needed</div>
+                  <div class="popup-feature">20 Invites (Tier 3): All previous features, unlimited new links when needed</div>
               </div>
 
               <div class="buttonContainer">
-                  <div class="loginButton" onclick="logout()">
-                      <p>Logout</p>
-                  </div>              
+                  <div class="loginButton" onclick="generateNewLink()">
+                      <p>Generate New Link</p>
+                  </div>  
+                  <div class="loginButton" onclick="viewGeneratedLinks()">
+                      <p>View Generated Links</p>
+                  </div>
                   <div class="loginButton" onclick="createReferralLink()">
                       <p>Generate Invite Code</p>
                   </div>
+                  <div class="loginButton" onclick="logout()">
+                      <p>Logout</p>
+                  </div>
+              </div>
+
+              <div id="generatedLinksPopup" class="popup">
+                  <div class="popup-content">
+                      <h3>Generated Links</h3>
+                      <ul id="generatedLinksList"></ul>
+                      <center><button onclick="closeGeneratedLinksPopup()">Close</button></center>
+                  </div>
               </div>
           `;
+
+          if (location.hostname.startsWith('premium.')) { 
+              document.getElementById("adBlockStatus").innerHTML = "<b>Enabled</b>";
+              document.getElementById("adBlockStatus").style = "color:rgb(2, 214, 44);";
+          } else {
+              document.getElementById("adBlockStatus").innerHTML = "<b>Disabled</b>";
+              document.getElementById("adBlockStatus").style = "color: red;";
+          }
       } catch (error) {
           console.error("Error fetching referral stats:", error);
       }
   } else {
-      loginArea.innerHTML = `
+    if (window.location.hostname.startsWith("premium.")) {
+      const baseDomain = window.location.hostname.split(".").slice(1).join(".");
+      window.location.href = `https://${baseDomain}`;
+    }
+          loginArea.innerHTML = `
           <div class="page-header">
               <h2 class="login-title">Accounts</h2>
               <button class="close-page" onclick="closePage()">✖</button>
@@ -961,22 +1127,6 @@ window.onload = async function () {
           </div>
       `;
   }
-};
-
-function openPage() {
-    const loginScreen = document.getElementById('loginScreen');
-    loginScreen.style.display = "block";
-    setTimeout(() => {
-        loginScreen.style.opacity = "1";
-    }, 10);
-}
-
-function closePage() {
-    const loginScreen = document.getElementById('loginScreen');
-    loginScreen.style.opacity = "0";
-    setTimeout(() => {
-        loginScreen.style.display = "none";
-    }, 500);
 }
 
 
