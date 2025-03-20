@@ -808,19 +808,21 @@ async function login(username, password) {
       localStorage.setItem("acc_username", username);
       document.cookie = `session=${username}; path=/; max-age=86400`; // 1-day session
 
+      const baseDomain = window.location.hostname.split('.').slice(-2).join('.'); // Get base domain
       const checkPremium = await fetch("/acc/check-premium");
       const premiumData = await checkPremium.json();
 
       if (premiumData.isPremium) {
-          window.location.href = "https://premium.example.com"; // Redirect eligible users
+          window.location.href = `https://premium.${baseDomain}`; // Redirect premium users
       } else {
-          location.reload(); // Reload for non-premium users
+          location.reload();
       }
   } else {
       document.getElementById('loginError').style.display = "block";
       document.getElementById('loginError').textContent = data.error;
   }
 }
+
 
 
 
@@ -1140,11 +1142,13 @@ async function checkPremiumAccess() {
       const data = await response.json();
 
       if (!data.isPremium) {
-          window.location.href = "https://example.com"; // Redirect unauthorized users
+          const baseDomain = window.location.hostname.replace("premium.", ""); 
+          window.location.href = `https://${baseDomain}`; // Redirect to base domain
       }
   } catch (error) {
       console.error("Error checking premium access:", error);
-      window.location.href = "https://example.com"; // Fail-safe redirect
+      const baseDomain = window.location.hostname.replace("premium.", ""); 
+      window.location.href = `https://${baseDomain}`; // Fail-safe redirect
   }
 }
 
@@ -1152,6 +1156,7 @@ async function checkPremiumAccess() {
 if (window.location.hostname.startsWith("premium.")) {
   checkPremiumAccess();
 }
+
 
 
 function hideonLoadpopup() {
