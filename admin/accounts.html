@@ -5,119 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-let currentPage = 1;
-const accountsPerPage = 15;
-
-async function fetchAccounts() {
-    try {
-        const response = await fetch(`/acc/get-referral-stats-list?page=${currentPage}`);
-        const data = await response.json();
-
-        displayAccounts(data.accounts);
-        updatePaginationControls(data.totalPages);
-    } catch (error) {
-        console.error("Error fetching accounts:", error);
-    }
-}
-
-function displayAccounts(accounts) {
-    const container = document.getElementById("accountsContainer");
-    container.innerHTML = "";
-
-    accounts.forEach(account => {
-        const accountHTML = `
-            <div class="account-entry p-4 bg-gray-200 rounded flex justify-between items-center">
-                <div>
-                    <p class="font-semibold">Username: ${account.username}</p>
-                    <p class="text-sm">Referred Users: ${account.referredCount}</p>
-                    <p class="text-sm">Perk Status: ${account.perkStatus}</p>
-                    <p class="text-sm">Referral Links: ${account.referralLinks.join(", ")}</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="setPerkLevel('${account.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Set Perk</button>
-                    <button onclick="deleteAccount('${account.username}')" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-                </div>
-            </div>
-        `;
-        container.innerHTML += accountHTML;
-    });
-}
-async function deleteAccount(username) {
-    if (!confirm(`Are you sure you want to delete ${username}? This action cannot be undone.`)) return;
-
-    try {
-        const response = await fetch("/acc/delete-account", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            console.log(`Successfully deleted account: ${username}`);
-            fetchAccounts(); 
-        } else {
-            console.error("Failed to delete account:", data.error);
-        }
-    } catch (error) {
-        console.error("Error deleting account:", error);
-    }
-}
-async function setPerkLevel(username) {
-    const perkLevel = prompt(`Enter new perk level for ${username} (0-3):`);
-    if (!perkLevel || isNaN(perkLevel) || perkLevel < 0 || perkLevel > 3) {
-        alert("Invalid perk level.");
-        return;
-    }
-
-    try {
-        const response = await fetch("/acc/set-perk-level", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, perkLevel: parseInt(perkLevel) }) 
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            console.log(`Successfully set perk level to ${perkLevel} for ${username}.`);
-            fetchAccounts();
-        } else {
-            console.error("Failed to set perk level:", data.error);
-        }
-    } catch (error) {
-        console.error("Error setting perk level:", error);
-    }
-}
-
-function updatePaginationControls(totalPages) {
-    const paginationContainer = document.getElementById("pagination-controls");
-
-    paginationContainer.innerHTML = `
-        <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-3 py-1 rounded bg-gray-300">Previous</button>
-        <span class="mx-2">Page ${currentPage} of ${totalPages || 1}</span>
-        <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-3 py-1 rounded bg-gray-300">Next</button>
-    `;
-}
-
-function changePage(direction) {
-    currentPage += direction;
-    if (currentPage < 1) currentPage = 1;
-    fetchAccounts();
-}
-
-fetchAccounts();
-setInterval(fetchAccounts, 5000);
-
-
-    </script>
 </head>
 <body class="bg-gray-100 flex justify-center items-center min-h-screen">
     <div class="w-full max-w-5xl p-6 bg-white shadow-md rounded-lg">
         <h1 class="text-2xl font-semibold mb-4 text-center">Account & Referral Management</h1>
-    <button onclick="window.location.href='/admin'" class="bg-blue-500 text-white px-4 py-2 rounded">Back</button>
+        <button onclick="window.location.href='/admin'" class="bg-blue-500 text-white px-4 py-2 rounded">Back</button>
         <div id="accountsContainer" class="space-y-4"></div>
-        <div id="pagination-controls" class="flex justify-center mt-4"></div>
+        <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
     </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function fetchAccounts() {
+            const res = await fetch(`/accounts/logs?page=${currentPage}`);
+            const data = await res.json();
+
+            totalPages = data.totalPages;
+            displayAccounts(data.accounts);
+        }
+
+        function displayAccounts(accounts) {
+            const container = document.getElementById("accountsContainer");
+            container.innerHTML = "";
+
+            accounts.forEach(account => {
+                container.innerHTML += `
+                    <div class="p-4 bg-gray-200 rounded flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold">Username: ${account.username}</p>
+                            <p class="text-sm">Referred Users: ${account.referredCount}</p>
+                            <p class="text-sm">Perk Status: ${account.perkStatus}</p>
+                            <p class="text-sm">Referral Links: ${account.referralLinks.join(", ")}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="setPerkLevel('${account.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Set Perk</button>
+                            <button onclick="deleteAccount('${account.username}')" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const paginationContainer = document.getElementById("pagination-controls");
+            paginationContainer.innerHTML = `
+                <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
+                <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
+            `;
+        }
+
+        function changePage(direction) {
+            if ((direction === -1 && currentPage > 1) || (direction === 1 && currentPage < totalPages)) {
+                currentPage += direction;
+                fetchAccounts();
+            }
+        }
+
+        fetchAccounts();
+    </script>
 </body>
 </html>

@@ -390,8 +390,10 @@ fastify.get("/get-message/:sessionId", async (request, reply) => {
     reply.send(messageData);
 });
 
-fastify.get("/visited-websites", async (request, reply) => {
+fastify.get("/visited-websites/logs", async (request, reply) => {
     let category = request.query.category || "all"; 
+    const page = parseInt(request.query.page) || 1;
+    const logsPerPage = 20;
 
     let allLogs = [];
 
@@ -424,7 +426,84 @@ fastify.get("/visited-websites", async (request, reply) => {
         });
     }
 
-    reply.send(allLogs);
+    const totalLogs = allLogs.length;
+    const totalPages = Math.ceil(totalLogs / logsPerPage);
+    const start = (page - 1) * logsPerPage;
+    const paginatedLogs = allLogs.slice(start, start + logsPerPage);
+
+    reply.send({
+        totalLogs,
+        totalPages,
+        currentPage: page,
+        logs: paginatedLogs,
+    });
+});
+
+fastify.get("/sessions/logs", async (request, reply) => {
+    const page = parseInt(request.query.page) || 1;
+    const sessionsPerPage = 15;
+
+    const sessionList = Object.entries(sessions).map(([id, data]) => {
+        let status = data.status;
+        if (status === "Offline" && data.lastOnline) {
+            status = `Last online ${timeAgo(data.lastOnline)}`;
+        }
+
+        return {
+            sessionId: id,
+            lastOnline: data.lastOnline,
+            status: data.banned ? "Banned" : status,
+            lastVisited: data.logs.length ? data.logs[data.logs.length - 1] : null,
+            banned: data.banned
+        };
+    });
+
+    sessionList.sort((a, b) => (b.status === "Online" ? 1 : -1));
+
+    const totalSessions = sessionList.length;
+    const totalPages = Math.ceil(totalSessions / sessionsPerPage);
+    const start = (page - 1) * sessionsPerPage;
+    const paginatedSessions = sessionList.slice(start, start + sessionsPerPage);
+
+    reply.send({
+        totalSessions,
+        totalPages,
+        currentPage: page,
+        sessions: paginatedSessions
+    });
+});
+
+fastify.get("/accounts/logs", async (request, reply) => {
+    const page = parseInt(request.query.page) || 1;
+    const accountsPerPage = 15;
+
+    let accountsData = {};
+    if (fs.existsSync(ACCOUNT_DATA_FILE)) {
+        try {
+            accountsData = JSON.parse(fs.readFileSync(ACCOUNT_DATA_FILE, 'utf-8'));
+        } catch (error) {
+            console.error("Error loading account data:", error);
+        }
+    }
+
+    const accountsArray = Object.keys(accountsData).map(username => ({
+        username,
+        referredCount: referrals[username]?.referredUsers?.size || 0, 
+        perkStatus: referrals[username]?.perkStatus || 0,
+        referralLinks: referrals[username]?.referralLinks || []
+    }));
+
+    const totalAccounts = accountsArray.length;
+    const totalPages = Math.ceil(totalAccounts / accountsPerPage);
+    const start = (page - 1) * accountsPerPage;
+    const paginatedAccounts = accountsArray.slice(start, start + accountsPerPage);
+
+    reply.send({
+        totalAccounts,
+        totalPages,
+        currentPage: page,
+        accounts: paginatedAccounts
+    });
 });
 
 
@@ -760,6 +839,27 @@ fastify.post("/acc/generate-domain", async (request, reply) => {
         generatedCount: userReferrals.generatedDomains,
         referredCount: userReferrals.referredUsers.size,  // ✅ Include referredCount in the response
         message: `You have generated ${userReferrals.generatedDomains} domain(s).`
+    });
+});
+fastify.get("/sessions/:id/logs", async (request, reply) => {
+    const { id } = request.params;
+    const page = parseInt(request.query.page) || 1;
+    const logsPerPage = 10;
+
+    ensureSession(id);
+    const sessionLogs = sessions[id].logs || [];
+
+    const totalLogs = sessionLogs.length;
+    const totalPages = Math.ceil(totalLogs / logsPerPage);
+
+    const start = (page - 1) * logsPerPage;
+    const paginatedLogs = sessionLogs.slice(start, start + logsPerPage);
+
+    reply.send({
+        totalLogs,
+        totalPages,
+        currentPage: page,
+        logs: paginatedLogs,
     });
 });
 

@@ -19,40 +19,31 @@
         <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
         <h1 class="text-2xl font-semibold mb-4 text-center">Visited Websites</h1>
         <button onclick="goBack()" class="absolute top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded">Back</button>
+        
         <div class="flex justify-center gap-4 mb-4">
             <button id="btn-all" onclick="setCategory('all')" class="bg-blue-500 text-white px-4 py-2 rounded">All</button>
             <button id="btn-porn" onclick="setCategory('porn')" class="bg-gray-500 text-white px-4 py-2 rounded">Porn</button>
         </div>
-        <div id="websitesList" class="overflow-y-auto max-h-[80vh] space-y-2 border p-2 rounded bg-gray-50" style="height: 80vh;"></div>
+
+        <div id="websitesList" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
+        <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
     </div>
 
     <script>
-        let selectedCategory = "all"; 
-        let allWebsites = [];
-        let loadedCount = 0; 
-        const chunkSize = 20;
-        let sessionBanStatus = {}; 
-        let refreshInterval;
+        let selectedCategory = "all";
+        let currentPage = 1;
+        let totalPages = 1;
+        const logsPerPage = 20;
 
         function goBack() {
             window.location.href = "/admin";
         }
 
-        function manageSession(sessionId) {
-            window.location.href = `/admin/session?id=${sessionId}`;
-        }
-        fastify.post("/logout", async (request, reply) => {
-    reply
-        .clearCookie("admin_session", { path: "/admin" })
-        .send({ success: true });
-});
         function setCategory(category) {
             selectedCategory = category;
-            allWebsites = [];
-            loadedCount = 0; 
-            fetchVisitedWebsites(true); 
+            currentPage = 1;
+            fetchVisitedWebsites();
             updateCategoryButtons();
-            resetRefreshInterval();
         }
 
         function updateCategoryButtons() {
@@ -63,73 +54,50 @@
             document.getElementById("btn-porn").classList.toggle("bg-gray-500", selectedCategory !== "porn");
         }
 
-        async function fetchVisitedWebsites(reset = false) {
-            if (reset) {
-                document.getElementById("websitesList").innerHTML = ""; 
-            }
+        async function fetchVisitedWebsites() {
+            const res = await fetch(`/visited-websites/logs?page=${currentPage}&category=${selectedCategory}`);
+            const data = await res.json();
 
-            const res = await fetch(`/visited-websites?category=${selectedCategory}`);
-            allWebsites = await res.json();
-            loadedCount = 0; 
-            await fetchBanStatuses(); 
-            loadMoreEntries(); 
+            totalPages = data.totalPages;
+            displayVisitedWebsites(data.logs);
         }
 
-        async function fetchBanStatuses() {
-            const uniqueSessionIds = [...new Set(allWebsites.map(entry => entry.sessionId))];
-
-            for (let sessionId of uniqueSessionIds) {
-                const res = await fetch(`/sessions/${sessionId}`);
-                const sessionData = await res.json();
-                sessionBanStatus[sessionId] = sessionData.banned ? "Banned" : "Not Banned";
-            }
-        }
-
-        function loadMoreEntries() {
+        function displayVisitedWebsites(logs) {
             const container = document.getElementById("websitesList");
             container.innerHTML = "";
 
-            let endIndex = Math.min(loadedCount + chunkSize, allWebsites.length);
-            for (let i = 0; i < endIndex; i++) {
-                let entry = allWebsites[i];
-
-                const banStatus = sessionBanStatus[entry.sessionId] || "Loading..."; 
-
-                const entryElement = document.createElement("div");
-                entryElement.className = "p-4 bg-gray-200 rounded flex justify-between items-center overflow-container";
-                entryElement.innerHTML = `
-                    <div>
-                        <p class="font-semibold">${entry.url}</p>
-                        <p class="text-sm text-gray-600">${new Date(entry.timestamp).toLocaleString()}</p>
-                        <p class="text-sm text-gray-500">Session ID: ${entry.sessionId} - <span class="${banStatus === 'Banned' ? 'text-red-500' : 'text-green-500'}">${banStatus}</span></p>
+            logs.forEach(entry => {
+                container.innerHTML += `
+                    <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
+                        <div>
+                            <p class="font-semibold">${entry.url}</p>
+                            <p class="text-sm text-gray-600">${new Date(entry.timestamp).toLocaleString()}</p>
+                            <p class="text-sm text-gray-500">Session ID: ${entry.sessionId}</p>
+                        </div>
                     </div>
-                    <button onclick="manageSession('${entry.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">Manage Session</button>
                 `;
+            });
 
-                container.appendChild(entryElement);
-            }
-
-            loadedCount = endIndex;
+            updatePaginationControls();
         }
 
-        function handleScroll() {
-            const container = document.getElementById("websitesList");
-            if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
-                loadMoreEntries();
-            }
+        function updatePaginationControls() {
+            const paginationContainer = document.getElementById("pagination-controls");
+            paginationContainer.innerHTML = `
+                <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
+                <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
+            `;
         }
 
-        function resetRefreshInterval() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
+        function changePage(direction) {
+            if ((direction === -1 && currentPage > 1) || (direction === 1 && currentPage < totalPages)) {
+                currentPage += direction;
+                fetchVisitedWebsites();
             }
-            refreshInterval = setInterval(fetchVisitedWebsites, 5000);
         }
-
-        document.getElementById("websitesList").addEventListener("scroll", handleScroll);
 
         fetchVisitedWebsites();
-        resetRefreshInterval();
     </script>    
 </body>
 </html>

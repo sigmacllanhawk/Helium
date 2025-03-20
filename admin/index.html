@@ -6,252 +6,90 @@
     <title>Session Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-            .overflow-container {
-        word-break: break-word; 
-        white-space: normal; 
-        overflow-wrap: break-word; 
-        min-width: fit-content; 
-    }
-
+        .overflow-container {
+            word-break: break-word; 
+            white-space: normal; 
+            overflow-wrap: break-word; 
+            min-width: fit-content; 
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex justify-center items-center min-h-screen">
     <div class="w-full max-w-3xl p-6 bg-white shadow-md rounded-lg relative flex flex-col">
         <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
         <h1 class="text-2xl font-semibold mb-4 text-center">Admin</h1>
-<div class="absolute top-4 left-4 flex gap-2">
-    <button onclick="window.location.href='/admin/logs'" class="bg-blue-500 text-white px-4 py-2 rounded">Global Logs</button>
-    <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
-</div>
-        
-        <div class="mb-4 flex gap-2">
-            <input type="text" id="searchInput" oninput="filterSessions()" placeholder="Search by ID..." class="p-2 border rounded w-full">
-            <select id="filterSelect" onchange="filterSessions()" class="p-2 border rounded">
-                <option value="all">All</option>
-                <option value="Online">Online</option>
-                <option value="Offline">Offline</option>
-                <option value="Banned">Banned</option>
-            </select>
+        <div class="absolute top-4 left-4 flex gap-2">
+            <button onclick="window.location.href='/admin/logs'" class="bg-blue-500 text-white px-4 py-2 rounded">Global Logs</button>
+            <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
         </div>
-
+        
         <div id="sessions" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
-        <div id="pagination-controls" class="flex justify-center mt-4"></div>
-        <br>
-        <div class="mb-4">
-            <input type="text" id="broadcastMessage" placeholder="Enter message..." class="p-2 border rounded w-full">
-            <input type="color" id="broadcastColor" value="#ffffff" class="p-2 border rounded">
-            <button onclick="sendGlobalMessage()" class="bg-green-500 text-white px-4 py-2 rounded">Send Message</button>
-        </div>
-        
+        <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
     </div>
 
     <script>
-        async function sendGlobalMessage() {
-    const message = document.getElementById("broadcastMessage").value;
-    const bgColor = document.getElementById("broadcastColor").value;
+        let currentPage = 1;
+        let totalPages = 1;
 
-    if (!message.trim()) {
-        alert("Message cannot be empty.");
-        return;
-    }
-
-    await fetch("/admin/broadcast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, bgColor })
-    });
-
-    alert("Message sent successfully!");
-}
-
-    let filteredSessionsData = [];
-    let sessionsData = [];
-    let currentPage = 1;
-    const sessionsPerPage = 15;
-
-    async function logout() {
-        const res = await fetch("/logout", { method: "POST" });
-        const data = await res.json();
-        if (data.success) window.location.href = "/admin";
-    }
-
-    async function fetchSessions() {
-        const res = await fetch("/sessions");
-        sessionsData = await res.json();
-        displaySessions();
-    }
-    function extractTimeAgo(status) {
-    const match = status.match(/Last online (\d+) (seconds?|minutes?|hours?|days?) ago/);
-    if (!match) return Infinity; 
-
-    let value = parseInt(match[1]);
-    let unit = match[2];
-
-    if (unit.startsWith("second")) return value;
-    if (unit.startsWith("minute")) return value * 60;
-    if (unit.startsWith("hour")) return value * 3600;
-    if (unit.startsWith("day")) return value * 86400;
-
-    return Infinity;
-}
-
-function displaySessions() {
-    const container = document.getElementById("sessions");
-    container.innerHTML = "";
-
-    const filterValue = document.getElementById("filterSelect").value;
-
-    let dataToDisplay = filteredSessionsData.length ? filteredSessionsData : sessionsData;
-
-    dataToDisplay = dataToDisplay.filter(session => {
-        if (filterValue === "Online") return session.status === "Online";
-        if (filterValue === "Offline") return session.status.startsWith("Last online");
-        if (filterValue === "Banned") return session.status === "Banned";
-        return true; 
-    });
-
-    dataToDisplay.sort((a, b) => {
-        if (filterValue === "all") {
-            if (a.status === "Online" && b.status !== "Online") return -1;
-            if (b.status === "Online" && a.status !== "Online") return 1;
-
-            if (a.status.startsWith("Last online") && b.status.startsWith("Last online")) {
-                let aTime = extractTimeAgo(a.status);
-                let bTime = extractTimeAgo(b.status);
-                return aTime - bTime;
-            }
-
-            if (a.status === "Banned") return 1;
-            if (b.status === "Banned") return -1;
+        async function logout() {
+            const res = await fetch("/logout", { method: "POST" });
+            const data = await res.json();
+            if (data.success) window.location.href = "/admin";
         }
 
-        if (filterValue === "Offline") {
-            let aTime = extractTimeAgo(a.status);
-            let bTime = extractTimeAgo(b.status);
-            return aTime - bTime;
+        async function fetchSessions() {
+            const res = await fetch(`/sessions/logs?page=${currentPage}`);
+            const data = await res.json();
+
+            totalPages = data.totalPages;
+            displaySessions(data.sessions);
         }
 
-        return 0;
-    });
+        function displaySessions(sessions) {
+            const container = document.getElementById("sessions");
+            container.innerHTML = "";
 
-    const totalPages = Math.ceil(dataToDisplay.length / sessionsPerPage);
-    const start = (currentPage - 1) * sessionsPerPage;
-    const end = start + sessionsPerPage;
-    const paginatedSessions = dataToDisplay.slice(start, end);
+            sessions.forEach(session => {
+                const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
+                const lastOnline = session.status === "Online" ? "Online Now" : session.status;
+                const banStatus = session.banned ? "Unban" : "Ban";
+                const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
 
-    paginatedSessions.forEach(session => {
-        const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
-        const lastOnline = session.status === "Online" ? "Online Now" : session.status;
-        const banStatus = session.banned ? "Unban" : "Ban";
-        const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
+                container.innerHTML += `
+                    <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
+                        <div>
+                            <p class="font-semibold">${session.sessionId}</p>
+                            <p class="text-sm">${lastVisit}</p>
+                            <p class="text-sm">${lastOnline}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
+                            <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+                        </div>
+                    </div>
+                `;
+            });
 
-        container.innerHTML += `
-            <div class="session-entry p-4 bg-gray-200 rounded flex justify-between items-center overflow-container" data-id="${session.sessionId}" data-status="${session.banned ? 'Banned' : session.status}">
-                <div>
-                    <p class="font-semibold">${session.sessionId}</p>
-                    <p class="text-sm">${lastVisit}</p>
-                    <p class="text-sm">${lastOnline}</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
-                    <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
-                </div>
-            </div>
-        `;
-    });
+            updatePaginationControls();
+        }
 
-    updatePaginationControls(totalPages);
-}
+        function updatePaginationControls() {
+            const paginationContainer = document.getElementById("pagination-controls");
+            paginationContainer.innerHTML = `
+                <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
+                <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
+            `;
+        }
 
-function updatePaginationControls(totalPages) {
-    const paginationContainer = document.getElementById("pagination-controls");
-    paginationContainer.innerHTML = `
-        <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-3 py-1 rounded bg-gray-300">Previous</button>
-        <span class="mx-2">Page ${currentPage} of ${totalPages || 1}</span>
-        <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-3 py-1 rounded bg-gray-300">Next</button>
-    `;
-}
-
-
-function changePage(direction) {
-    const filterValue = document.getElementById("filterSelect").value;
-    let dataToDisplay = filteredSessionsData.length ? filteredSessionsData : sessionsData;
-
-    dataToDisplay = dataToDisplay.filter(session => {
-        if (filterValue === "Online") return session.status === "Online";
-        if (filterValue === "Offline") return session.status.startsWith("Last online");
-        if (filterValue === "Banned") return session.status === "Banned";
-        return true; 
-    });
-
-    const totalPages = Math.ceil(dataToDisplay.length / sessionsPerPage);
-
-    currentPage += direction;
-    if (currentPage < 1) currentPage = 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-
-    displaySessions();
-}
-
-async function toggleBan(sessionId) {
-    const res = await fetch(`/sessions/${sessionId}`);
-    const session = await res.json();
-
-    let message = "";
-    let duration = null;
-
-    if (!session.banned) {
-        message = prompt("Enter a message to send to the banned user:", "You have been banned.");
-        if (message === null) return;
-
-        let input = prompt("Enter ban duration in minutes (leave blank for permanent ban):");
-        if (input !== null && input.trim() !== "") {
-            duration = parseInt(input.trim());
-            if (isNaN(duration) || duration <= 0) {
-                alert("Invalid duration. Using permanent ban.");
-                duration = null;
+        function changePage(direction) {
+            if ((direction === -1 && currentPage > 1) || (direction === 1 && currentPage < totalPages)) {
+                currentPage += direction;
+                fetchSessions();
             }
         }
-    }
 
-    await fetch(`/ban/${sessionId}`, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ message, duration }) 
-    });
-
-    fetchSessions(); 
-}
-
-
-
-    function viewSession(sessionId) {
-        window.location.href = `/admin/session?id=${sessionId}`;
-    }
-
-    function filterSessions() {
-    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-    const filterValue = document.getElementById("filterSelect").value;
-
-    const filtered = sessionsData.filter(session => {
-        const matchesSearch = session.sessionId.toLowerCase().includes(searchTerm);
-        const matchesFilter = 
-            filterValue === "all" || 
-            (filterValue === "Banned" && session.banned) || 
-            (filterValue === "Online" && session.status === "Online") ||
-            (filterValue === "Offline" && session.status.includes("Last online"));
-
-        return matchesSearch && matchesFilter;
-    });
-
-    filteredSessionsData = filtered;
-    currentPage = 1;
-    displaySessions();
-}
-
-    fetchSessions();
-    setInterval(fetchSessions, 5000);
-</script>
-
+        fetchSessions();
+    </script>
 </body>
 </html>
