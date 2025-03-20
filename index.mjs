@@ -276,13 +276,19 @@ fastify.addHook("onRequest", async (request, reply) => {
             return reply.redirect(`https://${baseDomain}`); // Redirect if not logged in
         }
 
-        const perkStatus = referrals[session]?.perkStatus || 0;
-        if (perkStatus < 1) {
-            const baseDomain = request.hostname.replace("premium.", "");
-            return reply.redirect(`https://${baseDomain}`); // Redirect if not premium
+        // Wait for user verification instead of instant redirect
+        try {
+            const perkStatus = referrals[session]?.perkStatus || 0;
+            if (perkStatus < 1) {
+                const baseDomain = request.hostname.replace("premium.", "");
+                return reply.redirect(`https://${baseDomain}`);
+            }
+        } catch (error) {
+            console.error("Error checking user premium status:", error);
         }
     }
 });
+
 
 
 fastify.post("/login", async (request, reply) => {

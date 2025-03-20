@@ -1137,18 +1137,22 @@ async function generateUserPage() {
 }
 
 async function checkPremiumAccess() {
+  if (sessionStorage.getItem("checkedPremium")) return; // Prevent multiple redirects
+
   try {
       const response = await fetch("/acc/check-premium");
       const data = await response.json();
 
       if (!data.isPremium) {
-          const baseDomain = window.location.hostname.replace("premium.", ""); 
-          window.location.href = `https://${baseDomain}`; // Redirect to base domain
+          sessionStorage.setItem("checkedPremium", "true"); // Mark check as done
+          const baseDomain = window.location.hostname.replace("premium.", "");
+          window.location.href = `https://${baseDomain}`; // Redirect unauthorized users
       }
   } catch (error) {
       console.error("Error checking premium access:", error);
-      const baseDomain = window.location.hostname.replace("premium.", ""); 
-      window.location.href = `https://${baseDomain}`; // Fail-safe redirect
+      sessionStorage.setItem("checkedPremium", "true"); // Avoid looping
+      const baseDomain = window.location.hostname.replace("premium.", "");
+      window.location.href = `https://${baseDomain}`;
   }
 }
 
@@ -1156,7 +1160,6 @@ async function checkPremiumAccess() {
 if (window.location.hostname.startsWith("premium.")) {
   checkPremiumAccess();
 }
-
 
 
 function hideonLoadpopup() {
