@@ -1078,7 +1078,7 @@ async function generateUserPage() {
               </div>
           `;
 
-          if (location.hostname.startsWith('premium.')) { 
+          if (perkStatus > 0) { 
               document.getElementById("adBlockStatus").innerHTML = "<b>Enabled</b>";
               document.getElementById("adBlockStatus").style = "color:rgb(2, 214, 44);";
           } else {
