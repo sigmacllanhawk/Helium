@@ -796,6 +796,7 @@ async function createAccount(username, password, vpassword) {
 
 async function login(username, password) {
   const hashedPassword = await hashPassword(password);
+  console.log(`Logging in with hashed password: ${hashedPassword}`); // DEBUGGING
 
   const response = await fetch('/acc/login', {
       method: 'POST',
@@ -806,24 +807,14 @@ async function login(username, password) {
   const data = await response.json();
   if (response.ok) {
       localStorage.setItem("acc_username", username);
+
       document.cookie = `session=${username}; path=/; max-age=86400`; // 1-day session
-
-      const baseDomain = window.location.hostname.split('.').slice(-2).join('.'); // Get base domain
-      const checkPremium = await fetch("/acc/check-premium");
-      const premiumData = await checkPremium.json();
-
-      if (premiumData.isPremium) {
-          window.location.href = `https://premium.${baseDomain}`; // Redirect premium users
-      } else {
-          location.reload();
-      }
-  } else {
+      location.reload();
+    } else {
       document.getElementById('loginError').style.display = "block";
       document.getElementById('loginError').textContent = data.error;
   }
 }
-
-
 
 
 function logout() {
@@ -1043,14 +1034,7 @@ async function generateUserPage() {
   const { perkStatus, referredCount, generatedDomains = 0 } = stats;
 
   if (user) {
-    if (perkStatus >= 1 && !window.location.hostname.includes("premium")) {
-      const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
-        window.location.href = `https://premium.${baseDomain}`;
-    } else if (window.location.hostname.includes("premium") && perkStatus < 1) {
-      const baseDomain = window.location.hostname.replace("premium.", "");
-      window.location.href = `https://${baseDomain}`;
-    }
-          try {
+              try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
           document.getElementById('utilities2').style = "width: 40px;";
           document.getElementById('utilities2').querySelectorAll('img')[0].style = "margin-right:3.5px;";
@@ -1105,10 +1089,7 @@ async function generateUserPage() {
           console.error("Error fetching referral stats:", error);
       }
   } else {
-    /*if (window.location.hostname.includes("premium")) {
-      const baseDomain = window.location.hostname.split(".").slice(1).join(".");
-      window.location.href = `https://${baseDomain}`;
-    }*/
+    
           loginArea.innerHTML = `
           <div class="page-header">
               <h2 class="login-title">Accounts</h2>
@@ -1136,30 +1117,6 @@ async function generateUserPage() {
   }
 }
 
-async function checkPremiumAccess() {
-  if (sessionStorage.getItem("checkedPremium")) return; // Prevent multiple redirects
-
-  try {
-      const response = await fetch("/acc/check-premium");
-      const data = await response.json();
-
-      if (!data.isPremium) {
-          sessionStorage.setItem("checkedPremium", "true"); // Mark check as done
-          const baseDomain = window.location.hostname.replace("premium.", "");
-          window.location.href = `https://${baseDomain}`; // Redirect unauthorized users
-      }
-  } catch (error) {
-      console.error("Error checking premium access:", error);
-      sessionStorage.setItem("checkedPremium", "true"); // Avoid looping
-      const baseDomain = window.location.hostname.replace("premium.", "");
-      window.location.href = `https://${baseDomain}`;
-  }
-}
-
-// Run this check **ONLY** if the user is on premium.example.com
-if (window.location.hostname.startsWith("premium.")) {
-  checkPremiumAccess();
-}
 
 
 function hideonLoadpopup() {
