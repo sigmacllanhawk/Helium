@@ -102,7 +102,55 @@
 
             updatePaginationControls();
         }
+        async function toggleBan(sessionId) {
+        const res = await fetch(`/sessions/${sessionId}`);
+        const session = await res.json();
 
+        let message = "";
+        let duration = null;
+
+        if (!session.banned) {
+            message = prompt("Enter a message to send to the banned user:", "You have been banned.");
+            if (message === null) return;
+
+            let input = prompt("Enter ban duration in minutes (leave blank for permanent ban):");
+            if (input !== null && input.trim() !== "") {
+                duration = parseInt(input.trim());
+                if (isNaN(duration) || duration <= 0) {
+                    alert("Invalid duration. Using permanent ban.");
+                    duration = null;
+                }
+            }
+        }
+
+        await fetch(`/ban/${sessionId}`, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ message, duration }) 
+        });
+
+        fetchSessionDetails();
+    }
+
+    async function sendMessageToSession() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get("id");
+        const message = document.getElementById("sessionMessage").value;
+        const bgColor = document.getElementById("sessionMessageColor").value;
+
+        if (!message.trim()) {
+            alert("Message cannot be empty.");
+            return;
+        }
+
+        await fetch("/admin/message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, message, bgColor })
+        });
+
+        alert("Message sent successfully!");
+    }
         function updatePaginationControls() {
             const paginationContainer = document.getElementById("pagination-controls");
             paginationContainer.innerHTML = `

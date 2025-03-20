@@ -1,95 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Session Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .overflow-container {
-            word-break: break-word; 
-            white-space: normal; 
-            overflow-wrap: break-word; 
-            min-width: fit-content; 
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Session Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .overflow-container {
+      word-break: break-word;
+      white-space: normal;
+      overflow-wrap: break-word;
+      min-width: fit-content;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 flex justify-center items-center min-h-screen">
-    <div class="w-full max-w-3xl p-6 bg-white shadow-md rounded-lg relative flex flex-col">
-        <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-        <h1 class="text-2xl font-semibold mb-4 text-center">Admin</h1>
-        <div class="absolute top-4 left-4 flex gap-2">
-            <button onclick="window.location.href='/admin/logs'" class="bg-blue-500 text-white px-4 py-2 rounded">Global Logs</button>
-            <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
-        </div>
-        
-        <div id="sessions" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
-        <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
+  <div class="w-full max-w-3xl p-6 bg-white shadow-md rounded-lg relative flex flex-col">
+    <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+    <h1 class="text-2xl font-semibold mb-4 text-center">Admin</h1>
+    <div class="absolute top-4 left-4 flex gap-2">
+      <button onclick="window.location.href='/admin/logs'" class="bg-blue-500 text-white px-4 py-2 rounded">Global Logs</button>
+      <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
     </div>
 
-    <script>
-        let currentPage = 1;
-        let totalPages = 1;
+    <div id="sessions" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
+    <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
+  </div>
 
-        async function logout() {
-            const res = await fetch("/logout", { method: "POST" });
-            const data = await res.json();
-            if (data.success) window.location.href = "/admin";
-        }
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
 
-        async function fetchSessions() {
-            const res = await fetch(`/sessions/logs?page=${currentPage}`);
-            const data = await res.json();
+    async function logout() {
+      const res = await fetch("/logout", { method: "POST" });
+      const data = await res.json();
+      if (data.success) window.location.href = "/admin";
+    }
 
-            totalPages = data.totalPages;
-            displaySessions(data.sessions);
-        }
+    async function fetchSessions() {
+      const res = await fetch(`/sessions/logs?page=${currentPage}`);
+      const data = await res.json();
 
-        function displaySessions(sessions) {
-            const container = document.getElementById("sessions");
-            container.innerHTML = "";
+      totalPages = data.totalPages;
+      displaySessions(data.sessions);
+    }
 
-            sessions.forEach(session => {
-                const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
-                const lastOnline = session.status === "Online" ? "Online Now" : session.status;
-                const banStatus = session.banned ? "Unban" : "Ban";
-                const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
+    function displaySessions(sessions) {
+      const container = document.getElementById("sessions");
+      container.innerHTML = "";
 
-                container.innerHTML += `
-                    <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
-                        <div>
-                            <p class="font-semibold">${session.sessionId}</p>
-                            <p class="text-sm">${lastVisit}</p>
-                            <p class="text-sm">${lastOnline}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
-                            <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
-                        </div>
-                    </div>
-                `;
-            });
+      sessions.forEach(session => {
+        const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
+        const lastOnline = session.status === "Online" ? "Online Now" : session.status;
+        const banStatus = session.banned ? "Unban" : "Ban";
+        const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
 
-            updatePaginationControls();
-        }
+        container.innerHTML += `
+          <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
+            <div>
+              <p class="font-semibold">${session.sessionId}</p>
+              <p class="text-sm">${lastVisit}</p>
+              <p class="text-sm">${lastOnline}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
+              <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+            </div>
+          </div>
+        `;
+      });
 
-        function updatePaginationControls() {
-            const paginationContainer = document.getElementById("pagination-controls");
-            paginationContainer.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
-                <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
-            `;
-        }
+      updatePaginationControls();
+    }
 
-        function changePage(direction) {
-            if ((direction === -1 && currentPage > 1) || (direction === 1 && currentPage < totalPages)) {
-                currentPage += direction;
-                fetchSessions();
-            }
-        }
+    function updatePaginationControls() {
+      const container = document.getElementById("pagination-controls");
+      container.innerHTML = `
+        <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
+        <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages}</span>
+        <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
+      `;
+    }
 
-        fetchSessions();
-    </script>
+    function changePage(direction) {
+      currentPage += direction;
+      fetchSessions();
+    }
+
+    function viewSession(sessionId) {
+      window.location.href = `/admin/session?id=${sessionId}`;
+    }
+
+    async function toggleBan(sessionId) {
+      const res = await fetch(`/ban/${sessionId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const data = await res.json();
+      fetchSessions();
+    }
+
+    fetchSessions();
+  </script>
 </body>
 </html>

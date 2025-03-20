@@ -1,72 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Account Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex justify-center items-center min-h-screen">
-    <div class="w-full max-w-5xl p-6 bg-white shadow-md rounded-lg">
-        <h1 class="text-2xl font-semibold mb-4 text-center">Account & Referral Management</h1>
-        <button onclick="window.location.href='/admin'" class="bg-blue-500 text-white px-4 py-2 rounded">Back</button>
-        <div id="accountsContainer" class="space-y-4"></div>
-        <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
-    </div>
+  <div class="w-full max-w-5xl p-6 bg-white shadow-md rounded-lg">
+    <h1 class="text-2xl font-semibold mb-4 text-center">Account & Referral Management</h1>
+    <button onclick="window.location.href='/admin'" class="bg-blue-500 text-white px-4 py-2 rounded">Back</button>
+    <div id="accountsContainer" class="space-y-4 mt-4"></div>
+    <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
+  </div>
 
-    <script>
-        let currentPage = 1;
-        let totalPages = 1;
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
 
-        async function fetchAccounts() {
-            const res = await fetch(`/accounts/logs?page=${currentPage}`);
-            const data = await res.json();
+    async function fetchAccounts() {
+      const res = await fetch(`/accounts/logs?page=${currentPage}`);
+      const data = await res.json();
 
-            totalPages = data.totalPages;
-            displayAccounts(data.accounts);
-        }
+      totalPages = data.totalPages;
+      displayAccounts(data.accounts);
+    }
 
-        function displayAccounts(accounts) {
-            const container = document.getElementById("accountsContainer");
-            container.innerHTML = "";
+    function displayAccounts(accounts) {
+      const container = document.getElementById("accountsContainer");
+      container.innerHTML = "";
 
-            accounts.forEach(account => {
-                container.innerHTML += `
-                    <div class="p-4 bg-gray-200 rounded flex justify-between items-center">
-                        <div>
-                            <p class="font-semibold">Username: ${account.username}</p>
-                            <p class="text-sm">Referred Users: ${account.referredCount}</p>
-                            <p class="text-sm">Perk Status: ${account.perkStatus}</p>
-                            <p class="text-sm">Referral Links: ${account.referralLinks.join(", ")}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="setPerkLevel('${account.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Set Perk</button>
-                            <button onclick="deleteAccount('${account.username}')" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-                        </div>
-                    </div>
-                `;
-            });
+      accounts.forEach(account => {
+        container.innerHTML += `
+          <div class="p-4 bg-gray-200 rounded flex justify-between items-center">
+            <div>
+              <p class="font-semibold">Username: ${account.username}</p>
+              <p class="text-sm">Referred Users: ${account.referredCount}</p>
+              <p class="text-sm">Perk Status: ${account.perkStatus}</p>
+              <p class="text-sm">Referral Links: ${account.referralLinks.join(", ")}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="setPerkLevel('${account.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Set Perk</button>
+              <button onclick="deleteAccount('${account.username}')" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+            </div>
+          </div>
+        `;
+      });
 
-            updatePaginationControls();
-        }
+      updatePaginationControls();
+    }
 
-        function updatePaginationControls() {
-            const paginationContainer = document.getElementById("pagination-controls");
-            paginationContainer.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
-                <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
-            `;
-        }
+    function updatePaginationControls() {
+      const container = document.getElementById("pagination-controls");
+      container.innerHTML = `
+        <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
+        <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages}</span>
+        <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
+      `;
+    }
 
-        function changePage(direction) {
-            if ((direction === -1 && currentPage > 1) || (direction === 1 && currentPage < totalPages)) {
-                currentPage += direction;
-                fetchAccounts();
-            }
-        }
+    function changePage(direction) {
+      currentPage += direction;
+      fetchAccounts();
+    }
 
-        fetchAccounts();
-    </script>
+    async function deleteAccount(username) {
+      if (!confirm(`Are you sure you want to delete ${username}?`)) return;
+
+      const res = await fetch("/acc/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+
+      const data = await res.json();
+      alert(data.message || "Deleted.");
+      fetchAccounts();
+    }
+
+    async function setPerkLevel(username) {
+      const input = prompt(`Enter new perk level for ${username} (0-3):`);
+      const level = parseInt(input);
+      if (![0, 1, 2, 3].includes(level)) return alert("Invalid level.");
+
+      const res = await fetch("/acc/set-perk-level", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, perkLevel: level })
+      });
+
+      const data = await res.json();
+      alert(data.message || "Perk level updated.");
+      fetchAccounts();
+    }
+
+    fetchAccounts();
+  </script>
 </body>
 </html>

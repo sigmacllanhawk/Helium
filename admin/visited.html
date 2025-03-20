@@ -9,8 +9,8 @@
         .overflow-container {
             word-break: break-word;
             white-space: normal;
-            overflow-wrap: break-word; 
-            min-width: fit-content; 
+            overflow-wrap: break-word;
+            min-width: fit-content;
         }
     </style>
 </head>
@@ -19,7 +19,7 @@
         <button onclick="logout()" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded">Logout</button>
         <h1 class="text-2xl font-semibold mb-4 text-center">Visited Websites</h1>
         <button onclick="goBack()" class="absolute top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded">Back</button>
-        
+
         <div class="flex justify-center gap-4 mb-4">
             <button id="btn-all" onclick="setCategory('all')" class="bg-blue-500 text-white px-4 py-2 rounded">All</button>
             <button id="btn-porn" onclick="setCategory('porn')" class="bg-gray-500 text-white px-4 py-2 rounded">Porn</button>
@@ -33,7 +33,6 @@
         let selectedCategory = "all";
         let currentPage = 1;
         let totalPages = 1;
-        const logsPerPage = 20;
 
         function goBack() {
             window.location.href = "/admin";
@@ -48,10 +47,7 @@
 
         function updateCategoryButtons() {
             document.getElementById("btn-all").classList.toggle("bg-blue-700", selectedCategory === "all");
-            document.getElementById("btn-all").classList.toggle("bg-blue-500", selectedCategory !== "all");
-
             document.getElementById("btn-porn").classList.toggle("bg-gray-700", selectedCategory === "porn");
-            document.getElementById("btn-porn").classList.toggle("bg-gray-500", selectedCategory !== "porn");
         }
 
         async function fetchVisitedWebsites() {
@@ -74,6 +70,7 @@
                             <p class="text-sm text-gray-600">${new Date(entry.timestamp).toLocaleString()}</p>
                             <p class="text-sm text-gray-500">Session ID: ${entry.sessionId}</p>
                         </div>
+                        <button onclick="manageSession('${entry.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">Manage Session</button>
                     </div>
                 `;
             });
@@ -82,8 +79,7 @@
         }
 
         function updatePaginationControls() {
-            const paginationContainer = document.getElementById("pagination-controls");
-            paginationContainer.innerHTML = `
+            document.getElementById("pagination-controls").innerHTML = `
                 <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
                 <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
                 <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
@@ -97,7 +93,11 @@
             }
         }
 
+        function manageSession(sessionId) {
+            window.location.href = `/admin/session?id=${sessionId}`;
+        }
+
         fetchVisitedWebsites();
-    </script>    
+    </script>
 </body>
 </html>
