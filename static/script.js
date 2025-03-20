@@ -1028,128 +1028,111 @@ async function generateUserPage() {
   const user = localStorage.getItem("acc_username");
   const loginScreen = document.getElementById('loginScreen');
   const loginArea = document.getElementById('loginArea');
-
   loginScreen.style.display = "none";
 
+  const hostnameParts = window.location.hostname.split('.');
+  const baseDomain = hostnameParts.slice(-2).join('.'); // Extracts example.com
+
   if (!user) {
-      // Handle redirection for non-logged-in users
       if (window.location.hostname.startsWith("premium.")) {
-          const baseDomain = window.location.hostname.split(".").slice(1).join(".");
           window.location.href = `https://${baseDomain}`;
+          return;
       }
-      displayLoginForm(loginArea);
+      loginArea.innerHTML = `
+          <div class="page-header">
+              <h2 class="login-title">Accounts</h2>
+              <button class="close-page" onclick="closePage()">✖</button>
+          </div>
+          <div class="form-container">
+              <div class="form-box">
+                  <h3>Login</h3>
+                  <input type="text" id="loginUsername" placeholder="Username">
+                  <input type="password" id="loginPassword" placeholder="Password">
+                  <button onclick="handleLogin()">Login</button>
+                  <p id="loginError" class="error-message">Invalid credentials.</p>
+              </div>
+              <div class="form-box">
+                  <h3>Create Account</h3>
+                  <input type="text" id="createUsername" placeholder="Username">
+                  <input type="password" id="createPassword" placeholder="Password">
+                  <input type="password" id="verifyPassword" placeholder="Verify Password">
+                  <button onclick="createAccount()">Sign Up</button>
+                  <p id="createAccountError" class="error-message">Passwords do not match.</p>
+              </div>
+          </div>`;
       return;
   }
 
   try {
-      // Wait for stats before making decisions
       const stats = await getReferralStats(user);
+      if (!stats) return;
       const { perkStatus, referredCount, generatedDomains = 0 } = stats;
-
-      const hostnameParts = window.location.hostname.split('.');
-      const baseDomain = hostnameParts.slice(-2).join('.'); // Extracts example.com
+      localStorage.setItem("perk_status", perkStatus);
 
       if (perkStatus >= 1 && !window.location.hostname.startsWith("premium.")) {
-          // Redirect only if not already on premium
           window.location.href = `https://premium.${baseDomain}`;
-          return; // Prevent further execution
-      } 
-
+          return;
+      }
       if (perkStatus < 1 && window.location.hostname.startsWith("premium.")) {
-          // Redirect only if still on premium while below level 1
-          const baseDomainWithoutPremium = hostnameParts.slice(1).join('.');
-          window.location.href = `https://${baseDomainWithoutPremium}`;
-          return; // Prevent further execution
+          window.location.href = `https://${baseDomain}`;
+          return;
       }
 
-      // User Interface Updates
-      setupUserPage(loginArea, user, perkStatus, referredCount, generatedDomains);
+      loginArea.innerHTML = `
+          <div class="page-header">
+              <h2 class="login-title">👋 Hello, ${user}!</h2>
+              <button class="close-page" onclick="closePage()">✖</button>
+          </div>
+          <br>
+          <p class="login-subtext">Current Tier: <b>${perkStatus}/3</b></p>
+          <p class="login-subtext">People Referred: <b>${referredCount}</b></p>
+          <p class="login-subtext" id="generatedLinks">Amount of generated links: <b>${generatedDomains}</b></p>
+          <p class="login-subtext">Ad-Blocking: <span class="login-subtext" id="adBlockStatus"></span></p>
+          <div class="popup-features">
+              <div class="popup-feature">5 Invites (Tier 1): Adblocking, immunity from bans, fast speeds</div>
+              <div class="popup-feature">10 Invites (Tier 2): All previous features, faster speeds, 1 new link when needed</div>
+              <div class="popup-feature">20 Invites (Tier 3): All previous features, unlimited new links when needed</div>
+          </div>
+          <div class="buttonContainer">
+              <div class="loginButton" onclick="generateNewLink()"><p>Generate New Link</p></div>  
+              <div class="loginButton" onclick="viewGeneratedLinks()"><p>View Generated Links</p></div>
+              <div class="loginButton" onclick="createReferralLink()"><p>Generate Invite Code</p></div>
+              <div class="loginButton" onclick="logout()"><p>Logout</p></div>
+          </div>
+          <div id="generatedLinksPopup" class="popup">
+              <div class="popup-content">
+                  <h3>Generated Links</h3>
+                  <ul id="generatedLinksList"></ul>
+                  <center><button onclick="closeGeneratedLinksPopup()">Close</button></center>
+              </div>
+          </div>`;
+
+      document.getElementById("adBlockStatus").innerHTML = location.hostname.startsWith('premium.') 
+          ? "<b>Enabled</b>" 
+          : "<b>Disabled</b>";
+      document.getElementById("adBlockStatus").style.color = location.hostname.startsWith('premium.') 
+          ? "rgb(2, 214, 44)" 
+          : "red";
 
   } catch (error) {
       console.error("Error fetching referral stats:", error);
   }
 }
 
-// Moves the login form logic into a separate function
-function displayLoginForm(loginArea) {
-  loginArea.innerHTML = `
-      <div class="page-header">
-          <h2 class="login-title">Accounts</h2>
-          <button class="close-page" onclick="closePage()">✖</button>
-      </div>
-      <div class="form-container">
-          <div class="form-box">
-              <h3>Login</h3>
-              <input type="text" id="loginUsername" placeholder="Username">
-              <input type="password" id="loginPassword" placeholder="Password">
-              <button onclick="login(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)">Login</button>
-              <p id="loginError" class="error-message">Invalid credentials.</p>
-          </div>
+// Handles login, stores session, and redirects correctly
+async function handleLogin() {
+  const username = document.getElementById("loginUsername").value;
+  const password = document.getElementById("loginPassword").value;
 
-          <div class="form-box">
-              <h3>Create Account</h3>
-              <input type="text" id="createUsername" placeholder="Username">
-              <input type="password" id="createPassword" placeholder="Password">
-              <input type="password" id="verifyPassword" placeholder="Verify Password">
-              <button onclick="createAccount(document.getElementById('createUsername').value, document.getElementById('createPassword').value, document.getElementById('verifyPassword').value)">Sign Up</button>
-              <p id="createAccountError" class="error-message">Passwords do not match.</p>
-          </div>
-      </div>
-  `;
-}
+  const loginSuccess = await login(username, password);
+  if (loginSuccess) {
+      localStorage.setItem("acc_username", username);
+      const stats = await getReferralStats(username);
+      localStorage.setItem("perk_status", stats.perkStatus || "0");
 
-// Moves user page rendering into a separate function
-function setupUserPage(loginArea, user, perkStatus, referredCount, generatedDomains) {
-  document.getElementById('utilities2').querySelectorAll('p')[0]?.remove();
-  document.getElementById('utilities2').style = "width: 40px;";
-  document.getElementById('utilities2').querySelectorAll('img')[0].style = "margin-right:3.5px;";
-
-  loginArea.innerHTML = `
-      <div class="page-header">
-          <h2 class="login-title">👋 Hello, ${user}!</h2>
-          <button class="close-page" onclick="closePage()">✖</button>
-      </div>
-      <br>
-      <p class="login-subtext">Current Tier: <b>${perkStatus}/3</b></p>
-      <p class="login-subtext">People Referred: <b>${referredCount}</b></p>
-      <p class="login-subtext" id="generatedLinks">Amount of generated links: <b>${generatedDomains}</b></p>
-      <p class="login-subtext">Ad-Blocking: <span class="login-subtext" id="adBlockStatus"></span></p>
-      <div class="popup-features">
-          <div class="popup-feature">5 Invites (Tier 1): Adblocking, immunity from bans, fast speeds</div>
-          <div class="popup-feature">10 Invites (Tier 2): All previous features, faster speeds, 1 new link when needed</div>
-          <div class="popup-feature">20 Invites (Tier 3): All previous features, unlimited new links when needed</div>
-      </div>
-
-      <div class="buttonContainer">
-          <div class="loginButton" onclick="generateNewLink()">
-              <p>Generate New Link</p>
-          </div>  
-          <div class="loginButton" onclick="viewGeneratedLinks()">
-              <p>View Generated Links</p>
-          </div>
-          <div class="loginButton" onclick="createReferralLink()">
-              <p>Generate Invite Code</p>
-          </div>
-          <div class="loginButton" onclick="logout()">
-              <p>Logout</p>
-          </div>
-      </div>
-
-      <div id="generatedLinksPopup" class="popup">
-          <div class="popup-content">
-              <h3>Generated Links</h3>
-              <ul id="generatedLinksList"></ul>
-              <center><button onclick="closeGeneratedLinksPopup()">Close</button></center>
-          </div>
-      </div>
-  `;
-
-  if (location.hostname.startsWith('premium.')) { 
-      document.getElementById("adBlockStatus").innerHTML = "<b>Enabled</b>";
-      document.getElementById("adBlockStatus").style = "color:rgb(2, 214, 44);";
+      location.reload();
   } else {
-      document.getElementById("adBlockStatus").innerHTML = "<b>Disabled</b>";
-      document.getElementById("adBlockStatus").style = "color: red;";
+      document.getElementById("loginError").style.display = "block";
   }
 }
 
