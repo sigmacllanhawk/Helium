@@ -256,7 +256,31 @@ fastify.get("/ban/message/:id", async (request, reply) => {
     });
 });
 
+fastify.get("/acc/check-premium", async (request, reply) => {
+    const session = request.cookies.session;
+    if (!session || !accounts[session]) {
+        return reply.status(401).send({ error: "No active session." });
+    }
 
+    const perkStatus = referrals[session]?.perkStatus || 0;
+
+    reply.send({ isPremium: perkStatus >= 1 });
+});
+
+fastify.addHook("onRequest", async (request, reply) => {
+    if (request.hostname.startsWith("premium.") && !request.url.startsWith("/acc/check-premium")) {
+        const session = request.cookies.session;
+        
+        if (!session || !accounts[session]) {
+            return reply.redirect("https://example.com"); // Redirect if not logged in
+        }
+
+        const perkStatus = referrals[session]?.perkStatus || 0;
+        if (perkStatus < 1) {
+            return reply.redirect("https://example.com"); // Redirect if not premium
+        }
+    }
+});
 
 fastify.post("/login", async (request, reply) => {
     const { password } = request.body;

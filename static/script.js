@@ -796,7 +796,6 @@ async function createAccount(username, password, vpassword) {
 
 async function login(username, password) {
   const hashedPassword = await hashPassword(password);
-  console.log(`Logging in with hashed password: ${hashedPassword}`); // DEBUGGING
 
   const response = await fetch('/acc/login', {
       method: 'POST',
@@ -807,14 +806,22 @@ async function login(username, password) {
   const data = await response.json();
   if (response.ok) {
       localStorage.setItem("acc_username", username);
-
       document.cookie = `session=${username}; path=/; max-age=86400`; // 1-day session
-      location.reload();
-    } else {
+
+      const checkPremium = await fetch("/acc/check-premium");
+      const premiumData = await checkPremium.json();
+
+      if (premiumData.isPremium) {
+          window.location.href = "https://premium.example.com"; // Redirect eligible users
+      } else {
+          location.reload(); // Reload for non-premium users
+      }
+  } else {
       document.getElementById('loginError').style.display = "block";
       document.getElementById('loginError').textContent = data.error;
   }
 }
+
 
 
 function logout() {
@@ -1127,6 +1134,24 @@ async function generateUserPage() {
   }
 }
 
+async function checkPremiumAccess() {
+  try {
+      const response = await fetch("/acc/check-premium");
+      const data = await response.json();
+
+      if (!data.isPremium) {
+          window.location.href = "https://example.com"; // Redirect unauthorized users
+      }
+  } catch (error) {
+      console.error("Error checking premium access:", error);
+      window.location.href = "https://example.com"; // Fail-safe redirect
+  }
+}
+
+// Run this check **ONLY** if the user is on premium.example.com
+if (window.location.hostname.startsWith("premium.")) {
+  checkPremiumAccess();
+}
 
 
 function hideonLoadpopup() {
