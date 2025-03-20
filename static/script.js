@@ -1096,10 +1096,10 @@ async function generateUserPage() {
           console.error("Error fetching referral stats:", error);
       }
   } else {
-    if (window.location.hostname.includes("premium")) {
+    /*if (window.location.hostname.includes("premium")) {
       const baseDomain = window.location.hostname.split(".").slice(1).join(".");
       window.location.href = `https://${baseDomain}`;
-    }
+    }*/
           loginArea.innerHTML = `
           <div class="page-header">
               <h2 class="login-title">Accounts</h2>
