@@ -11,7 +11,14 @@ window.addEventListener('load', () => {
   if (window.panicKeys && Array.isArray(window.panicKeys) && window.panicUrl) detectPanicKeys();
 });
 
-setTimeout(() => notification(`ChatGPT is now permanently available in the top-right menu! Give it a try.`, "#039dfc"), 2500);
+setTimeout(() => {
+  const user = localStorage.getItem("acc_username");
+  if (user) {
+    notification(`Welcome! You are logged in as <b>${user}</b>.`, "#fcba03")
+  } else {
+    notification(`Try using our accounts feature to get more unblocked links and faster speeds.`, "#fcba03")
+  }
+}, 5000);
 
 function reloadPage() {
   if (document.getElementById("frame" + currentTab).src != "about:blank") document.getElementById("frame" + currentTab).src = document.getElementById("frame" + currentTab).src;
@@ -90,7 +97,7 @@ function notification(message, bgColor) {
   notification.style.backgroundColor = bgColor;
 
   const text = document.createElement('span');
-  text.textContent = message;
+  text.innerHTML = message;
 
   const closeBtn = document.createElement('img');
   closeBtn.className = 'close-btn';
@@ -289,7 +296,7 @@ function selectTab(tabIndex) {
 }
 
 function addTab() {
-  if (tabs.length >= 27) {
+  if (tabs.length >= 20) {
     notification('The maximum amount of tabs have been reached.', "#ff9999");
     return;
   }
@@ -1036,7 +1043,7 @@ async function generateUserPage() {
   if (user) {
               try {
           document.getElementById('utilities2').querySelectorAll('p')[0].remove();
-          document.getElementById('utilities2').style = "width: 40px;";
+          document.getElementById('utilities2').style = "width: 40px; min-width: 40px;";
           document.getElementById('utilities2').querySelectorAll('img')[0].style = "margin-right:3.5px;";
           loginArea.innerHTML = `
               <div class="page-header">
