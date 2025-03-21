@@ -23,33 +23,13 @@
       <button onclick="window.location.href='/admin/accounts'" class="bg-blue-500 text-white px-4 py-2 rounded">Account Manager</button>
     </div>
 
-    <div class="mb-4 flex gap-2">
-      <input type="text" id="searchInput" oninput="filterSessions()" placeholder="Search by ID..." class="p-2 border rounded w-full">
-      <select id="filterSelect" onchange="filterSessions()" class="p-2 border rounded">
-        <option value="all">All</option>
-        <option value="Online">Online</option>
-        <option value="Offline">Offline</option>
-        <option value="Banned">Banned</option>
-      </select>
-    </div>
-
     <div id="sessions" class="overflow-y-auto max-h-[70vh] space-y-2 border p-2 rounded bg-gray-50"></div>
     <div id="pagination-controls" class="flex justify-center mt-4 gap-4"></div>
-
-    <div class="mt-6 mb-2">
-      <input type="text" id="broadcastMessage" placeholder="Enter message..." class="p-2 border rounded w-full mb-2">
-      <div class="flex gap-2">
-        <input type="color" id="broadcastColor" value="#ffffff" class="p-2 border rounded">
-        <button onclick="sendGlobalMessage()" class="bg-green-500 text-white px-4 py-2 rounded">Send Message</button>
-      </div>
-    </div>
   </div>
 
   <script>
     let currentPage = 1;
     let totalPages = 1;
-    let allSessions = [];
-    let filteredSessions = [];
 
     async function logout() {
       const res = await fetch("/logout", { method: "POST" });
@@ -57,65 +37,25 @@
       if (data.success) window.location.href = "/admin";
     }
 
-    async function sendGlobalMessage() {
-      const message = document.getElementById("broadcastMessage").value;
-      const bgColor = document.getElementById("broadcastColor").value;
-
-      if (!message.trim()) {
-        alert("Message cannot be empty.");
-        return;
-      }
-
-      await fetch("/admin/broadcast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, bgColor })
-      });
-
-      alert("Message sent successfully!");
-    }
-
     async function fetchSessions() {
-      const res = await fetch(`/sessions/all`);
+      const res = await fetch(/sessions/logs?page=${currentPage});
       const data = await res.json();
-      allSessions = data.sessions;
-      filterSessions();
+
+      totalPages = data.totalPages;
+      displaySessions(data.sessions);
     }
 
-    function filterSessions() {
-      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-      const filterValue = document.getElementById("filterSelect").value;
-
-      filteredSessions = allSessions.filter(session => {
-        const matchesSearch = session.sessionId.toLowerCase().includes(searchTerm);
-        const matchesFilter =
-          filterValue === "all" ||
-          (filterValue === "Online" && session.status === "Online") ||
-          (filterValue === "Offline" && session.status.includes("Last online")) ||
-          (filterValue === "Banned" && session.banned);
-
-        return matchesSearch && matchesFilter;
-      });
-
-      totalPages = Math.ceil(filteredSessions.length / 15);
-      currentPage = 1;
-      displaySessions();
-    }
-
-    function displaySessions() {
+    function displaySessions(sessions) {
       const container = document.getElementById("sessions");
       container.innerHTML = "";
 
-      const start = (currentPage - 1) * 15;
-      const paginated = filteredSessions.slice(start, start + 15);
-
-      paginated.forEach(session => {
+      sessions.forEach(session => {
         const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
         const lastOnline = session.status === "Online" ? "Online Now" : session.status;
         const banStatus = session.banned ? "Unban" : "Ban";
         const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
 
-        container.innerHTML += `
+        container.innerHTML += 
           <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
             <div>
               <p class="font-semibold">${session.sessionId}</p>
@@ -127,7 +67,7 @@
               <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
             </div>
           </div>
-        `;
+        ;
       });
 
       updatePaginationControls();
@@ -135,36 +75,29 @@
 
     function updatePaginationControls() {
       const container = document.getElementById("pagination-controls");
-      container.innerHTML = `
+      container.innerHTML = 
         <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Previous</button>
-        <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages || 1}</span>
+        <span class="mx-2 text-lg font-semibold">Page ${currentPage} of ${totalPages}</span>
         <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
-      `;
+      ;
     }
 
     function changePage(direction) {
       currentPage += direction;
-      if (currentPage < 1) currentPage = 1;
-      if (currentPage > totalPages) currentPage = totalPages;
-      displaySessions();
+      fetchSessions();
     }
 
     function viewSession(sessionId) {
-      window.location.href = `/admin/session?id=${sessionId}`;
+      window.location.href = /admin/session?id=${sessionId};
     }
 
     async function toggleBan(sessionId) {
-      const res = await fetch(`/ban/${sessionId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-      await res.json();
+      const res = await fetch(/ban/${sessionId}, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const data = await res.json();
       fetchSessions();
     }
 
     fetchSessions();
-    setInterval(fetchSessions, 5000);
   </script>
 </body>
 </html>
