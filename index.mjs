@@ -14,7 +14,7 @@ import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 const SESSION_DATA_FILE = "session_data.json";
 const publicPath = join(process.cwd(), "static");
 const uvPath = join(process.cwd(), "uv");
-const PASSWORD = "sPUaR227A3V^h^68#Fs#2kLZTysRK87BR6Z998z@8X53&YTBdC%LnGpDNVvp@Q!576WF%ThPc8k6fY9H2Q@DUdV$JR%@W58%ZQGgKpU$#^TS4hD$58UgM5zP6#obti*%";
+const PASSWORD = "fm2!$&uprEa#Xxy%i7v*7e8jFSwmQs!!Nvz$6M44HZ%LXDs9jcWoiCXa$U&!it46SqN!s2Uf#tU8!^S^T7sDpRinY&f^RFHE5v$76njuhrvV^Ape#sSA@WQ9!f9h!YKT";
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
 const ACCOUNT_DATA_FILE = 'account_data.json';
 const REFERRALS_DATA_FILE = 'referrals_data.json';
