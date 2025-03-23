@@ -442,8 +442,10 @@ fastify.get("/visited-websites/logs", async (request, reply) => {
 fastify.get("/sessions/logs", async (request, reply) => {
     const page = parseInt(request.query.page) || 1;
     const sessionsPerPage = 15;
+    const search = (request.query.search || "").toLowerCase();
+    const filter = request.query.filter || "all";
 
-    const sessionList = Object.entries(sessions).map(([id, data]) => {
+    let sessionList = Object.entries(sessions).map(([id, data]) => {
         let status = data.status;
         if (status === "Offline" && data.lastOnline) {
             status = `Last online ${timeAgo(data.lastOnline)}`;
@@ -458,10 +460,25 @@ fastify.get("/sessions/logs", async (request, reply) => {
         };
     });
 
-    sessionList.sort((a, b) => (b.status === "Online" ? 1 : -1));
+    sessionList = sessionList.filter(session => {
+        const matchesSearch = session.sessionId.toLowerCase().includes(search);
+        const matchesFilter =
+            filter === "all" ||
+            (filter === "Online" && session.status === "Online") ||
+            (filter === "Offline" && session.status.startsWith("Last online")) ||
+            (filter === "Banned" && session.banned);
+
+        return matchesSearch && matchesFilter;
+    });
+
+    sessionList.sort((a, b) => {
+        if (a.status === "Online" && b.status !== "Online") return -1;
+        if (b.status === "Online" && a.status !== "Online") return 1;
+        return 0;
+    });
 
     const totalSessions = sessionList.length;
-    const totalPages = Math.ceil(totalSessions / sessionsPerPage);
+    const totalPages = Math.max(1, Math.ceil(totalSessions / sessionsPerPage));
     const start = (page - 1) * sessionsPerPage;
     const paginatedSessions = sessionList.slice(start, start + sessionsPerPage);
 

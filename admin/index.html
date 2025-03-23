@@ -74,48 +74,29 @@
     }
 
     async function fetchSessions(page = 1) {
+  const searchTerm = document.getElementById("searchInput")?.value || "";
+  const filterValue = document.getElementById("filterSelect")?.value || "all";
+
   try {
-    const res = await fetch(`/sessions/logs?page=${page}`);
+    const res = await fetch(`/sessions/logs?page=${page}&search=${encodeURIComponent(searchTerm)}&filter=${filterValue}`);
     const data = await res.json();
 
-    if (!Array.isArray(data.sessions)) {
-      console.error("Invalid sessions data:", data);
-      allSessions = [];
-    } else {
-      allSessions = data.sessions;
-      totalPages = data.totalPages || 1;
-      currentPage = data.currentPage || 1;
-    }
+    filteredSessions = data.sessions;
+    totalPages = data.totalPages || 1;
+    currentPage = data.currentPage || 1;
 
-    filterSessions();
+    displaySessions();
   } catch (err) {
     console.error("Failed to fetch sessions:", err);
-    allSessions = [];
-    filterSessions();
+    filteredSessions = [];
+    displaySessions();
   }
 }
 
 
-    function filterSessions() {
-      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-      const filterValue = document.getElementById("filterSelect").value;
-
-      filteredSessions = allSessions.filter(session => {
-        const matchesSearch = session.sessionId.toLowerCase().includes(searchTerm);
-        const matchesFilter =
-          filterValue === "all" ||
-          (filterValue === "Online" && session.status === "Online") ||
-          (filterValue === "Offline" && session.status.includes("Last online")) ||
-          (filterValue === "Banned" && session.banned);
-
-        return matchesSearch && matchesFilter;
-      });
-
-      totalPages = Math.ceil(filteredSessions.length / 15);
-      currentPage = 1;
-      displaySessions();
-    }
-
+function filterSessions() {
+  fetchSessions(1);
+}
     function displaySessions() {
       const container = document.getElementById("sessions");
       container.innerHTML = "";
