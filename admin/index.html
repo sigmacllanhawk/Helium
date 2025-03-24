@@ -98,34 +98,31 @@ function filterSessions() {
   fetchSessions(1);
 }
     function displaySessions() {
-      const container = document.getElementById("sessions");
-      container.innerHTML = "";
+  const container = document.getElementById("sessions");
+  container.innerHTML = "";
 
-      const start = (currentPage - 1) * 15;
-      const paginated = filteredSessions.slice(start, start + 15);
+  filteredSessions.forEach(session => {
+    const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
+    const lastOnline = session.status === "Online" ? "Online Now" : session.status;
+    const banStatus = session.banned ? "Unban" : "Ban";
+    const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
 
-      paginated.forEach(session => {
-        const lastVisit = session.lastVisited ? new Date(session.lastVisited.timestamp).toLocaleString() : "No activity";
-        const lastOnline = session.status === "Online" ? "Online Now" : session.status;
-        const banStatus = session.banned ? "Unban" : "Ban";
-        const banClass = session.banned ? "bg-red-500" : "bg-gray-500";
+    container.innerHTML += `
+      <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
+        <div>
+          <p class="font-semibold">${session.sessionId}</p>
+          <p class="text-sm">${lastVisit}</p>
+          <p class="text-sm">${lastOnline}</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
+          <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+        </div>
+      </div>
+    `;
+  });
 
-        container.innerHTML += `
-          <div class="p-4 bg-gray-200 rounded flex justify-between items-center overflow-container">
-            <div>
-              <p class="font-semibold">${session.sessionId}</p>
-              <p class="text-sm">${lastVisit}</p>
-              <p class="text-sm">${lastOnline}</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="toggleBan('${session.sessionId}')" class="${banClass} text-white px-3 py-1 rounded">${banStatus}</button>
-              <button onclick="viewSession('${session.sessionId}')" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
-            </div>
-          </div>
-        `;
-      });
-
-      updatePaginationControls();
+  updatePaginationControls();
     }
 
     function updatePaginationControls() {
