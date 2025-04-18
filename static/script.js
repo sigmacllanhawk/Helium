@@ -365,7 +365,7 @@ function reRegisterServiceWorkers() {
     parent.notification('ServiceWorker API unavailable.', '#ff9999');
     return;
   }
-  navigator.serviceWorker.register('/service-worker.js')
+  navigator.serviceWorker.register("/sw.js", { scope: "/class" })
     .then(() => {
       parent.notification('Service worker re-registered.', '#95ff8a');
     })

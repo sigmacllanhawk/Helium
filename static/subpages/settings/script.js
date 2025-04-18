@@ -27,8 +27,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     menuItems.forEach(item => {
         item.addEventListener("click", function () {
+          if (this.textContent.toLowerCase() == ("wizard")) {
+            parent.triggerSetup();
+          } else {
             const selectedPage = `${this.textContent.toLowerCase()}-settings`;
             showSettingsPage(selectedPage);
+          }
         });
     });
 
