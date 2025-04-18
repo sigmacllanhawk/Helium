@@ -1252,7 +1252,7 @@ async function getReferralStats(username) {
           }
 
           console.log("Failed to fetch referral stats:", data.error || "Unknown error");
-          if (localStorage.getItem('username')) logout();
+          if (localStorage.getItem('acc_username')) logout();
           return {
               referredCount: 0,   // ✅ Ensure referredCount is always returned
               perkStatus: 0,

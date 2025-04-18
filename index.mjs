@@ -665,34 +665,6 @@ if (cluster.isPrimary) {
 			message: "Account created successfully."
 		});
 	});
-	// at the bottom of your worker setup, before `fastify.listen(...)`
-fastify.get('/acc/logs', async (request, reply) => {
-	const page = parseInt(request.query.page) || 1;
-	const perPage = 15;
-  
-	// pull in your referral data—which is where you keep track of each user's links, referredUsers, and perkStatus
-	const referrals = await getReferrals();
-  
-	// convert it into an array of account objects
-	const allAccounts = Object.entries(referrals).map(([username, info]) => ({
-	  username,
-	  referredCount: info.referredUsers.length,
-	  perkStatus:      info.perkStatus,
-	  referralLinks:   info.referralLinks
-	}));
-  
-	// paginate
-	const totalPages = Math.max(1, Math.ceil(allAccounts.length / perPage));
-	const start = (page - 1) * perPage;
-	const accounts = allAccounts.slice(start, start + perPage);
-  
-	// respond with exactly what your UI code does:
-	//   const data = await res.json();
-	//   totalPages = data.totalPages;
-	//   displayAccounts(data.accounts);
-	return reply.send({ totalPages, accounts });
-  });
-  
 	fastify.post("/acc/login", async (request, reply) => {
 		const {
 			username,
@@ -858,7 +830,48 @@ fastify.get('/acc/logs', async (request, reply) => {
 			referredUsers: referrals[username].referredUsers
 		});
 	});
-
+	fastify.get("/acc/logs", async (request, reply) => {
+		const page            = parseInt(request.query.page) || 1;
+		const accountsPerPage = 15;
+	  
+		// 1) Load all referral info from Redis
+		const referrals = await getReferrals();
+	  
+		// 2) Grab every account:<username> key from Redis
+		const accKeys = await redis.keys(`${ACCOUNT_PREFIX}*`);
+		// strip off the "acc:" prefix
+		const usernames = accKeys.map(k => k.slice(ACCOUNT_PREFIX.length));
+	  
+		// 3) Build the array of account objects
+		const accountsArray = usernames.map(username => {
+		  const info = referrals[username] || {
+			referredUsers: [],
+			referralLinks: [],
+			perkStatus:    0
+		  };
+		  return {
+			username,
+			referredCount: info.referredUsers.length,
+			perkStatus:    info.perkStatus,
+			referralLinks: info.referralLinks
+		  };
+		});
+	  
+		// 4) Paginate
+		const totalAccounts = accountsArray.length;
+		const totalPages    = Math.max(1, Math.ceil(totalAccounts / accountsPerPage));
+		const start         = (page - 1) * accountsPerPage;
+		const accounts      = accountsArray.slice(start, start + accountsPerPage);
+	  
+		// 5) Return exactly what your front‑end expects
+		reply.send({
+		  totalAccounts,
+		  totalPages,
+		  currentPage: page,
+		  accounts
+		});
+	  });
+	  
 	fastify.post("/acc/delete-account", async (request, reply) => {
 		const {
 			username
@@ -883,30 +896,33 @@ fastify.get('/acc/logs', async (request, reply) => {
 	});
 
 	fastify.post("/acc/get-referral-stats", async (request, reply) => {
-		const {
-			username
-		} = request.body;
-		const referrals = await getReferrals();
-		if (!username || !referrals[username]) {
-			return reply.status(404).send({
-				error: "User not found or no referrals."
-			});
-		}
+		const { username } = request.body;
 
-		const userReferrals = referrals[username];
-		const referredCount = userReferrals.referredUsers?.length || 0;
-		const links = await getLinks();
-		const generatedLinks = links.slice(0, userReferrals.generatedDomains || 0);
+   const account = await getAccount(username);
+  if (!username || !account) {
+    return reply.status(404).send({ error: "User not found." });
+  }
 
-		reply.send({
-			referredCount,
-			perkStatus: userReferrals.perkStatus || 0,
-			referralLinks: userReferrals.referralLinks || [],
-			generatedDomains: userReferrals.generatedDomains || 0,
-			generatedLinks
-		});
-	});
+   const referrals = await getReferrals();
+   const userReferrals = referrals[username] ?? {
+     referredUsers: [],
+     referralLinks: [],
+     perkStatus: 0,
+     generatedDomains: 0
+   };
 
+   const referredCount = userReferrals.referredUsers.length;
+   const links = await getLinks();
+   const generatedLinks = links.slice(0, userReferrals.generatedDomains);
+
+   reply.send({
+     referredCount,
+     perkStatus: userReferrals.perkStatus,
+     referralLinks: userReferrals.referralLinks,
+     generatedDomains: userReferrals.generatedDomains,
+     generatedLinks
+   });
+});
 	fastify.post("/acc/generate-domain", async (request, reply) => {
 		const {
 			username
