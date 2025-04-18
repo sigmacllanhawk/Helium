@@ -42,17 +42,20 @@
           <img src="assets/back.svg" onclick="navigateBack()">
           <img src="assets/foward.svg" onclick="navigateForward()">
           <img src="assets/reload.svg" onclick="reloadPage()">
+          <img src="assets/bookmark.svg" id="bookmarkIcon" style="width: 21px;" onclick="toggleBookmark()">
           <img src="assets/bars-solid.svg" onclick="openHamburgerMenu()" id="hamburgermenuicon"></img>
         </div>
       </div>
     </div>
     <div id="hamburgerbackground">
       <div id="hamburgermenu" class="hamburger-menu">
+        <button onclick="toggleBookmarksMenu()">Bookmarks</button>
         <button onclick="openSettings()">Settings</button>
         <button onclick="openApps()">Apps</button>
         <button onclick="openGPT()">ChatGPT</button>
-	<button onclick="window.open('https://discord.com/invite/NYg2zkauk6/')">Other Links</button>
+	<button onclick="runService('discord.gg/gohelium');">Other Links</button>
   <button onclick="openDev()">Dev Menu</button>
+  <hr style="width:100%; border-color:rgba(255,255,255,0.2); margin:8px 0;">
   <div style="background: none; width: 100px; margin-top: 0px; margin-bottom: 0px;" id="utilities3">
     <img style="margin-right: 10px; margin-left: 7.5px;" src="assets/popout.svg" onclick="popout()">
     <img style="margin-right: 7.5px; margin-left: 7.5px;" src="assets/expand.svg" onclick="fullscreen()">
@@ -62,6 +65,15 @@
       </div>
       <div id="hamburgerbackgroundcontent"></div>
     </div>
+    <div id="bookmarksMenu" class="submenu">
+      <div id="bookmarksMenuBg"></div>
+      <div class="submenu-header">
+        <p>My Bookmarks</p>
+        <button onclick="toggleBookmarksMenu()" class="close-submenu">✖</button>
+      </div>
+      <div id="bookmarkList" class="bookmark-list"></div>
+    </div>
+    
     <div id="searchbarbackground">
       <div id="sbBackgroundContent"></div>
       <input type="text" id="searchBar" placeholder="Search or enter a URL" />

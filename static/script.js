@@ -1564,6 +1564,90 @@ const backgroundPool = [
   'assets/otherBackground9.png',
   'assets/defaultBackground.png',
 ];
+function getCurrentUrlAndTitle() {
+  const iframe = document.getElementById(`frame${currentTab}`);
+  const url    = iframe.src;
+  const title  = iframe.contentDocument?.title || url;
+  return { url, title };
+}
+
+function toggleBookmark() {
+  const { url, title } = getCurrentUrlAndTitle();
+  let list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+  const exists = list.some(b => b.url === url);
+
+  if (exists) {
+    list = list.filter(b => b.url !== url);
+    parent.notification('Removed bookmark.', '#ff9999');
+  } else {
+    list.push({ url, title });
+    parent.notification('Bookmarked page!', '#95ff8a');
+  }
+
+  localStorage.setItem('bookmarks', JSON.stringify(list));
+  updateBookmarkIcon();
+  displayBookmarks();
+}
+
+function updateBookmarkIcon() {
+  const { url } = getCurrentUrlAndTitle();
+  const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+  const icon = document.getElementById('bookmarkIcon');
+  icon.src = list.some(b => b.url === url)
+    ? 'assets/bookmark-filled.svg'
+    : 'assets/bookmark.svg';
+}
+function toggleBookmarksMenu() {
+  const menu = document.getElementById('bookmarksMenu');
+  if (menu.style.display === 'flex') {
+    menu.style.display = 'none';
+  } else {
+    displayBookmarks();      // populate before showing
+    menu.style.display = 'flex';
+  }
+}
+
+// Populate the list
+function displayBookmarks() {
+  const container = document.getElementById('bookmarkList');
+  container.innerHTML = '';
+  const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+  list.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bookmark-item';
+    div.textContent = b.title;
+    div.onclick = () => {
+      toggleBookmarksMenu();
+      runService(b.url);
+    };
+    container.appendChild(div);
+  });
+}
+
+function displayBookmarks() {
+  const container = document.getElementById('bookmarkList');
+  container.innerHTML = '';
+  const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+
+  list.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bookmark-item';
+    div.textContent = b.title;
+    div.onclick = () => runService(b.url);
+    container.appendChild(div);
+  });
+}
+
+// hook into your existing iframe load & tab switch
+function onFrameLoadOrTabChange() {
+  updateBookmarkIcon();
+  displayBookmarks();
+}
+document.querySelectorAll('iframe').forEach(f => {
+  f.addEventListener('load', onFrameLoadOrTabChange);
+});
+// also call once on initial load
+window.addEventListener('load', onFrameLoadOrTabChange);
 
 let currentBackgroundIndex = 0;
 
