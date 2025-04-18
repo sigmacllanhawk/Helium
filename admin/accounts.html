@@ -17,19 +17,25 @@
   <script>
     let currentPage = 1;
     let totalPages = 1;
-
+  
     async function fetchAccounts() {
-      const res = await fetch(`/accounts/logs?page=${currentPage}`);
-      const data = await res.json();
-
-      totalPages = data.totalPages;
-      displayAccounts(data.accounts);
+      try {
+        const res = await fetch(`/acc/logs?page=${currentPage}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status} – ${res.statusText}`);
+        const { accounts, totalPages: tp } = await res.json();
+        totalPages = tp;
+        displayAccounts(accounts);
+      } catch (err) {
+        console.error('fetchAccounts error:', err);
+        document.getElementById('accountsContainer').innerHTML = `
+          <div class="text-red-500">Error loading accounts: ${err.message}</div>
+        `;
+      }
     }
-
+  
     function displayAccounts(accounts) {
       const container = document.getElementById("accountsContainer");
       container.innerHTML = "";
-
       accounts.forEach(account => {
         container.innerHTML += `
           <div class="p-4 bg-gray-200 rounded flex justify-between items-center">
@@ -46,10 +52,9 @@
           </div>
         `;
       });
-
       updatePaginationControls();
     }
-
+  
     function updatePaginationControls() {
       const container = document.getElementById("pagination-controls");
       container.innerHTML = `
@@ -58,42 +63,39 @@
         <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""} class="px-4 py-2 bg-gray-300 rounded">Next</button>
       `;
     }
-
+  
     function changePage(direction) {
       currentPage += direction;
       fetchAccounts();
     }
-
+  
     async function deleteAccount(username) {
       if (!confirm(`Are you sure you want to delete ${username}?`)) return;
-
       const res = await fetch("/acc/delete-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username })
       });
-
       const data = await res.json();
       alert(data.message || "Deleted.");
       fetchAccounts();
     }
-
+  
     async function setPerkLevel(username) {
-      const input = prompt(`Enter new perk level for ${username} (0-3):`);
+      const input = prompt(`Enter new perk level for ${username} (0–3):`);
       const level = parseInt(input);
-      if (![0, 1, 2, 3].includes(level)) return alert("Invalid level.");
-
+      if (![0,1,2,3].includes(level)) return alert("Invalid level.");
       const res = await fetch("/acc/set-perk-level", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, perkLevel: level })
       });
-
       const data = await res.json();
       alert(data.message || "Perk level updated.");
       fetchAccounts();
     }
-
+  
+    // initial load
     fetchAccounts();
   </script>
 </body>
