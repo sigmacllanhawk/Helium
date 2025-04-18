@@ -661,6 +661,29 @@ iframe {
 /* step title + subtitle */
 .sHead { margin: 0; font-size: 1.75rem; font-weight: 800; }
 .sSHead { margin: 8px 0 0; font-size: 1.125rem; font-weight: 600; color: #555; }
+.sButton {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sButton:hover {
+  background-color: #0056b3;
+}
+
+.sButton:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
 
 /* settings form styles */
 .settings-list {

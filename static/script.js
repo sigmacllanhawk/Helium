@@ -6,7 +6,6 @@ if (localStorage.getItem('backgroundUrl')) root.style.setProperty('--background'
 if (localStorage.getItem('theme')) root.style.setProperty('--background-color', localStorage.getItem('theme'));
 
 async function triggerSetup(index = 0) {
-  localStorage.setItem('triggeredSetup','true');
   const overlay = document.getElementById('setupScreen');
   const panel   = document.getElementById('settingsPanel');
   overlay.style.display = 'flex';
@@ -138,6 +137,8 @@ async function triggerSetup(index = 0) {
           { label: 'Info', desc: 'Additional features on the way.', control: `` }
         ]
       });
+      localStorage.setItem('triggeredSetup','true');
+
       break;
 
     // >4) DONE
@@ -1364,10 +1365,7 @@ async function viewGeneratedLinks() {
       const stats = await getReferralStats(user);
       const { generatedDomains = 0 } = stats;
 
-      if (generatedDomains === 0) {
-          notification("No links have been generated yet.", "#ff9999");
-          return;
-      }
+      
 
       // Fetch all available links from links.json
       const response = await fetch("/get-links");

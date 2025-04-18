@@ -3,13 +3,11 @@ import os from "node:os";
 import {
 	createServer
 } from "node:http";
-import {
-	hostname
-} from "node:os";
 import path, {
 	join
 } from "node:path";
 import fs from "fs";
+import { readFile } from "fs/promises";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import fastifyCookie from "@fastify/cookie";
@@ -137,17 +135,18 @@ async function setReferrals(referrals) {
 }
 
 async function getLinks() {
-	const data = await redis.get(LINKS_KEY);
-	if (data) return JSON.parse(data);
-	if (fs.existsSync(LINKS_FILE)) {
-		const links = JSON.parse(fs.readFileSync(LINKS_FILE, "utf-8"));
-		await redis.set(LINKS_KEY, JSON.stringify(links));
-		return links;
-	}
-	return [];
-}
-async function setLinks(links) {
-	await redis.set(LINKS_KEY, JSON.stringify(links));
+  try {
+    // 1) Always read the file via promise‑API
+    const fileData = await readFile(LINKS_FILE, "utf8");
+    const links    = JSON.parse(fileData);
+
+    // 2) Mirror into Redis
+    await redis.set(LINKS_KEY, JSON.stringify(links));
+    return links;
+  } catch (err) {
+    console.error("getLinks error:", err);
+    return [];
+  }
 }
 
 if (cluster.isPrimary) {
