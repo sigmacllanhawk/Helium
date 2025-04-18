@@ -665,7 +665,34 @@ if (cluster.isPrimary) {
 			message: "Account created successfully."
 		});
 	});
-
+	// at the bottom of your worker setup, before `fastify.listen(...)`
+fastify.get('/acc/logs', async (request, reply) => {
+	const page = parseInt(request.query.page) || 1;
+	const perPage = 15;
+  
+	// pull in your referral data—which is where you keep track of each user's links, referredUsers, and perkStatus
+	const referrals = await getReferrals();
+  
+	// convert it into an array of account objects
+	const allAccounts = Object.entries(referrals).map(([username, info]) => ({
+	  username,
+	  referredCount: info.referredUsers.length,
+	  perkStatus:      info.perkStatus,
+	  referralLinks:   info.referralLinks
+	}));
+  
+	// paginate
+	const totalPages = Math.max(1, Math.ceil(allAccounts.length / perPage));
+	const start = (page - 1) * perPage;
+	const accounts = allAccounts.slice(start, start + perPage);
+  
+	// respond with exactly what your UI code does:
+	//   const data = await res.json();
+	//   totalPages = data.totalPages;
+	//   displayAccounts(data.accounts);
+	return reply.send({ totalPages, accounts });
+  });
+  
 	fastify.post("/acc/login", async (request, reply) => {
 		const {
 			username,
