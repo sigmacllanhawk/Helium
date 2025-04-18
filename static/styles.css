@@ -347,6 +347,7 @@ body {
   height: calc(100vh - 60px);
   z-index: 10;
   cursor: default;
+  pointer-events: none;
 }
 iframe {
   border: none;
@@ -355,6 +356,7 @@ iframe {
   position: absolute;
   z-index: 1;
   display: none;
+  pointer-events: all;
 
 }
 
