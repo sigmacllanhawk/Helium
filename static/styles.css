@@ -610,6 +610,101 @@ iframe {
   color: red;
 }
 
+/* --- styles.css additions --- */
+
+/* make your setupScreen fill the viewport */
+#setupScreen {
+  position: fixed;
+  inset: 0;
+  background-image: url('/assets/defaultbackground.png');
+  background-size: cover;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* panel base (you already have most of this) */
+.sPanel {
+  background: #fff;
+  width: 50vw;
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+/* header / body / footer slots */
+.sPanel__header {
+  padding: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.sPanel__body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.sPanel__footer {
+  padding: 16px 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* step title + subtitle */
+.sHead { margin: 0; font-size: 1.75rem; font-weight: 800; }
+.sSHead { margin: 8px 0 0; font-size: 1.125rem; font-weight: 600; color: #555; }
+
+/* settings form styles */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-item .item-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.settings-item .item-desc {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.settings-item input,
+.settings-item select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.settings-item button {
+  align-self: start;
+  padding: 8px 14px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.settings-item button:hover {
+  background: #0056b3;
+}
 
 #loginArea {
             background-color: #FFF;

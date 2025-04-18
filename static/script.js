@@ -5,6 +5,374 @@ if (localStorage.getItem('customFavicon')) document.querySelector("link[rel~='ic
 if (localStorage.getItem('backgroundUrl')) root.style.setProperty('--background', `url(${localStorage.getItem('backgroundUrl')})`);
 if (localStorage.getItem('theme')) root.style.setProperty('--background-color', localStorage.getItem('theme'));
 
+async function triggerSetup(index = 0) {
+  localStorage.setItem('triggeredSetup','true');
+  const overlay = document.getElementById('setupScreen');
+  const panel   = document.getElementById('settingsPanel');
+  overlay.style.display = 'flex';
+
+  function render({ title, subtitle, items }) {
+    panel.innerHTML = `
+      <div class="sPanel__header">
+        <p class="sHead">${title}</p>
+        ${subtitle ? `<p class="sSHead">${subtitle}</p>` : ''}
+      </div>
+      <div class="sPanel__body">
+        <div class="settings-list">
+          ${items.map(item => `
+            <div class="settings-item">
+              <p class="item-title">${item.label}</p>
+              ${item.desc ? `<p class="item-desc">${item.desc}</p>` : ''}
+              ${item.control}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="sPanel__footer">
+        ${index > 0 
+          ? `<div class="sButton" onclick="triggerSetup(${index-1})"><p>Back</p></div>` 
+          : ''}
+        <div class="sButton" onclick="triggerSetup(${index+1})">
+          <p>${index < 4 ? 'Next' : 'Done'}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  switch (index) {
+    // 0) INTRODUCTION
+    case 0:
+      render({
+        title: 'Welcome to Helium Setup',
+        subtitle: 'This wizard will guide you through configuring your proxy and appearance settings.',
+        items: [
+          {
+            label: 'Let’s get started…',
+            control: ``
+          }
+        ]
+      });
+      break;
+
+    // 1) GENERAL
+    case 1:
+      render({
+        title: 'General Settings',
+        subtitle: 'Basic Helium behavior',
+        items: [
+          {
+            label: 'Tab Cosmetic Presets',
+            desc: 'Pick a pre‑made look or Reset',
+            control: `<select onchange="tabSwitch(this)">
+                        <option value="blank">Pick…</option>
+                        <option>Schoology</option>
+                        <option>Google Classroom</option>
+                        <option>Google Docs</option>
+                        <option>Google</option>
+                        <option>Canvas</option>
+                        <option>Khan Academy</option>
+                        <option>Wikipedia</option>
+                        <option value="reset">Reset</option>
+                      </select>`
+          },
+          {
+            label: 'Custom Title',
+            desc: `Enter "reset" to restore default`,
+            control: `<input type="text" placeholder="Your title" onchange="cloakTitle(this.value)" />`
+          },
+          {
+            label: 'Custom Icon',
+            desc: `Enter favicon URL or "reset"`,
+            control: `<input type="text" placeholder="Favicon URL" onchange="cloakFavicon(this.value)" />`
+          }
+        ]
+      });
+      break;
+
+    // 2) APPEARANCE
+    case 2:
+      render({
+        title: 'Appearance',
+        subtitle: 'Themes & colors',
+        items: [
+          {
+            label: 'Theme',
+            control: `<select onchange="changeTheme(this.value)">
+                        <option value="blank">Pick…</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                      </select>`
+          },
+          {
+            label: 'Custom Background',
+            desc: `Image URL or "reset"`,
+            control: `<input type="text" placeholder="Background URL" onchange="changeBackground(this.value)" />`
+          },
+          {
+            label: 'Accent Color',
+            desc: `Hex code (e.g. #ff0000)`,
+            control: `<input type="text" placeholder="#rrggbb" onchange="changeTheme(this.value)" />`
+          }
+        ]
+      });
+      break;
+
+    // 3) CACHE & WORKERS
+    case 3:
+      render({
+        title: 'Cache & Workers',
+        items: [
+          { label: 'Clear Local Storage',           control: `<button onclick="clearLocalStorage()">Execute</button>` },
+          { label: 'Unregister Service Workers',     control: `<button onclick="unregisterServiceWorkers()">Execute</button>` },
+          { label: 'Re‑Register Service Workers',    control: `<button onclick="reRegisterServiceWorkers()">Execute</button>` }
+        ]
+      });
+      break;
+
+    // 4) EXTENSIONS
+    case 4:
+      render({
+        title: 'Extensions',
+        subtitle: 'Coming Soon!',
+        items: [
+          { label: 'Info', desc: 'Additional features on the way.', control: `` }
+        ]
+      });
+      break;
+
+    // >4) DONE
+    default:
+      overlay.style.display = 'none';
+  }
+}
+function tabSwitch(select) {
+  const val = select.value.toLowerCase();
+  switch (val) {
+    case 'schoology':
+      cloakTitle('Home | Schoology');
+      cloakFavicon('https://www.powerschool.com/favicon.ico');
+      break;
+    case 'google classroom':
+      cloakTitle('Home');
+      cloakFavicon('https://ssl.gstatic.com/classroom/favicon.ico');
+      break;
+    case 'google docs':
+      cloakTitle('Google Docs');
+      cloakFavicon('https://ssl.gstatic.com/docs/documents/images/kix-favicon-2023q4.ico');
+      break;
+    case 'google':
+      cloakTitle('Google');
+      cloakFavicon('https://www.google.com/favicon.ico');
+      break;
+    case 'canvas':
+      cloakTitle('Dashboard');
+      cloakFavicon('https://k12.instructure.com/favicon.ico');
+      break;
+    case 'khan academy':
+      cloakTitle('Khan Academy | Free Online Courses, Lessons & Practice');
+      cloakFavicon('https://cdn.kastatic.org/images/favicon.ico?size=48x48');
+      break;
+    case 'wikipedia':
+      cloakTitle('Wikipedia, the free encyclopedia');
+      cloakFavicon('https://en.wikipedia.org/favicon.ico');
+      break;
+    case 'reset':
+      cloakTitle('reset');
+      cloakFavicon('reset');
+      break;
+    default:
+      // no action
+  }
+}
+
+// … your triggerSetup and render logic remains unchanged …
+
+// --- IMPLEMENTATION WITH NOTIFICATIONS ---
+
+function tabSwitch(select) {
+  const val = select.value.toLowerCase();
+  try {
+    switch (val) {
+      case 'schoology':
+        cloakTitle('Home | Schoology');
+        cloakFavicon('https://www.powerschool.com/favicon.ico');
+        break;
+      case 'google classroom':
+        cloakTitle('Home');
+        cloakFavicon('https://ssl.gstatic.com/classroom/favicon.ico');
+        break;
+      case 'google docs':
+        cloakTitle('Google Docs');
+        cloakFavicon('https://ssl.gstatic.com/docs/documents/images/kix-favicon-2023q4.ico');
+        break;
+      case 'google':
+        cloakTitle('Google');
+        cloakFavicon('https://www.google.com/favicon.ico');
+        break;
+      case 'canvas':
+        cloakTitle('Dashboard');
+        cloakFavicon('https://k12.instructure.com/favicon.ico');
+        break;
+      case 'khan academy':
+        cloakTitle('Khan Academy | Free Online Courses, Lessons & Practice');
+        cloakFavicon('https://cdn.kastatic.org/images/favicon.ico?size=48x48');
+        break;
+      case 'wikipedia':
+        cloakTitle('Wikipedia, the free encyclopedia');
+        cloakFavicon('https://en.wikipedia.org/favicon.ico');
+        break;
+      case 'reset':
+        cloakTitle('reset');
+        cloakFavicon('reset');
+        parent.notification('Presets reset to default.', '#95ff8a');
+        break;
+      default:
+        parent.notification('No preset selected.', '#ff9999');
+    }
+  } catch (err) {
+    parent.notification('Failed to apply preset: ' + err.message, '#ff9999');
+  }
+}
+
+function cloakTitle(newTitle) {
+  try {
+    if (newTitle === 'reset') {
+      document.title = 'Helium';
+      localStorage.removeItem('customTitle');
+      parent.notification('Title reset to default.', '#95ff8a');
+    } else if (!newTitle.trim()) {
+      throw new Error('Title cannot be empty');
+    } else {
+      document.title = newTitle;
+      localStorage.setItem('customTitle', newTitle);
+      parent.notification('Title set to "' + newTitle + '".', '#95ff8a');
+    }
+  } catch (err) {
+    parent.notification('Failed to set title: ' + err.message, '#ff9999');
+  }
+}
+
+function cloakFavicon(faviconUrl) {
+  try {
+    const head = document.head;
+    let link = head.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      head.appendChild(link);
+    }
+    if (faviconUrl === 'reset') {
+      link.href = '/assets/icon.png';
+      localStorage.removeItem('customFavicon');
+      parent.notification('Favicon reset to default.', '#95ff8a');
+    } else {
+      if (!/^https?:\/\//i.test(faviconUrl)) {
+        faviconUrl = 'https://' + faviconUrl;
+      }
+      // basic URL validation
+      if (!faviconUrl.match(/\.[a-z]{2,6}(\/|$)/i)) {
+        throw new Error('Invalid URL format');
+      }
+      link.href = faviconUrl;
+      localStorage.setItem('customFavicon', faviconUrl);
+      parent.notification('Favicon set successfully.', '#95ff8a');
+    }
+  } catch (err) {
+    parent.notification('Failed to set favicon: ' + err.message, '#ff9999');
+  }
+}
+
+function changeTheme(theme) {
+  try {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.style.setProperty('--background-color', '255, 255, 255');
+      localStorage.setItem('theme', '255, 255, 255');
+      parent.notification('Light theme applied.', '#95ff8a');
+    } else if (theme === 'dark') {
+      root.style.setProperty('--background-color', '0, 0, 0');
+      localStorage.setItem('theme', '0, 0, 0');
+      parent.notification('Dark theme applied.', '#95ff8a');
+    } else if (/^#?[0-9A-Fa-f]{3,6}$/.test(theme)) {
+      let hex = theme.replace(/^#/, '');
+      if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+      const num = parseInt(hex,16);
+      const r = (num>>16)&255, g=(num>>8)&255, b=num&255;
+      root.style.setProperty('--background-color', `${r}, ${g}, ${b}`);
+      localStorage.setItem('theme', `${r}, ${g}, ${b}`);
+      parent.notification(`Accent color set to #${hex}.`, '#95ff8a');
+    } else {
+      throw new Error('Invalid hex code');
+    }
+  } catch (err) {
+    parent.notification('Theme change error: ' + err.message, '#ff9999');
+  }
+}
+
+function changeBackground(imageUrl) {
+  try {
+    const root = document.documentElement;
+    if (imageUrl === 'reset') {
+      root.style.setProperty('--background', `url('/assets/defaultbackground.png')`);
+      localStorage.setItem('backgroundUrl', '/assets/defaultbackground.png');
+      parent.notification('Background reset to default.', '#95ff8a');
+    } else {
+      if (!/^https?:\/\//i.test(imageUrl)) {
+        imageUrl = 'https://' + imageUrl;
+      }
+      const img = new Image();
+      img.onload = () => {
+        root.style.setProperty('--background', `url(${imageUrl})`);
+        localStorage.setItem('backgroundUrl', imageUrl);
+        parent.notification('Background image applied.', '#95ff8a');
+      };
+      img.onerror = () => {
+        parent.notification('Background image failed to load.', '#ff9999');
+      };
+      img.src = imageUrl;
+    }
+  } catch (err) {
+    parent.notification('Background error: ' + err.message, '#ff9999');
+  }
+}
+
+function clearLocalStorage() {
+  try {
+    localStorage.clear();
+    parent.notification('All localStorage cleared.', '#95ff8a');
+  } catch (err) {
+    parent.notification('Could not clear localStorage.', '#ff9999');
+  }
+}
+
+function unregisterServiceWorkers() {
+  if (!navigator.serviceWorker) {
+    parent.notification('ServiceWorker API unavailable.', '#ff9999');
+    return;
+  }
+  navigator.serviceWorker.getRegistrations()
+    .then(regs => {
+      regs.forEach(r => r.unregister());
+      parent.notification('All service workers unregistered.', '#95ff8a');
+    })
+    .catch(() => {
+      parent.notification('Failed to unregister service workers.', '#ff9999');
+    });
+}
+
+function reRegisterServiceWorkers() {
+  if (!navigator.serviceWorker) {
+    parent.notification('ServiceWorker API unavailable.', '#ff9999');
+    return;
+  }
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(() => {
+      parent.notification('Service worker re-registered.', '#95ff8a');
+    })
+    .catch(err => {
+      parent.notification('SW registration failed: ' + err.message, '#ff9999');
+    });
+}
 window.addEventListener('load', () => {
   window.panicKeys = JSON.parse(localStorage.getItem("panicKeys"));
   window.panicUrl = localStorage.getItem("panicURL") || "https://google.com";
@@ -883,8 +1251,8 @@ async function getReferralStats(username) {
               data = { error: "Unknown error" };
           }
 
-          console.error("Failed to fetch referral stats:", data.error || "Unknown error");
-
+          console.log("Failed to fetch referral stats:", data.error || "Unknown error");
+          if (localStorage.getItem('username')) logout();
           return {
               referredCount: 0,   // ✅ Ensure referredCount is always returned
               perkStatus: 0,
@@ -1132,19 +1500,24 @@ function hideonLoadpopup() {
   popup.classList.add("hide");
 }
 document.addEventListener("DOMContentLoaded", function () {
-  const popup = document.getElementById("onLoadPopup");
+  if (!localStorage.getItem('triggeredSetup')) {
+    triggerSetup(0);
+  } else{
+    const popup = document.getElementById("onLoadPopup");
 
-  setTimeout(() => {
-      popup.classList.add("show");
-  }, 100);
-
-  document.addEventListener("click", function (event) {
-      if (!popup.contains(event.target)) {
-          popup.classList.remove("show");
-          popup.classList.add("hide");
-      }
-  });
+    setTimeout(() => {
+        popup.classList.add("show");
+    }, 100);
+  
+    document.addEventListener("click", function (event) {
+        if (!popup.contains(event.target)) {
+            popup.classList.remove("show");
+            popup.classList.add("hide");
+        }
+    });
+  }
 });
+
 async function checkForGlobalMessages() {
   const sessionId = localStorage.getItem("session_id");
 
