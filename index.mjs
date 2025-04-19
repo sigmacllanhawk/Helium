@@ -1,3 +1,4 @@
+import 'dotenv/config';  
 import cluster from "node:cluster";
 import os from "node:os";
 import {
@@ -22,10 +23,12 @@ import {
 import {
 	baremuxPath
 } from "@mercuryworkshop/bare-mux/node";
+import speakeasy from "speakeasy";
 
 const port = parseInt(process.env.PORT || "") || 8080;
 const numCPUs = os.cpus().length;
-const PASSWORD = "Xs6994^9573q8x6!K73h59v$232PT#cdGMCGfgn@fiv4RNhM!6Cf92bT5ib@m9j3M!i4GZj8%NmaD4%qkL^v&me8a7N2ARiP5!p%P%^U%bn6P5sat&wWdy7b!@PrTF^9";
+const TWO_FA_SECRET = process.env.ADMIN_2FA_SECRET;
+const PASSWORD = process.env.ADMIN_PASSWORD;
 const publicPath = join(process.cwd(), "static");
 const uvPath = join(process.cwd(), "uv");
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
@@ -33,7 +36,12 @@ const LINKS_FILE = "links.json";
 
 const redis = createClient();
 await redis.connect();
-
+console.log("TWO_FA_SECRET:", JSON.stringify(TWO_FA_SECRET));
+console.log("EXPECTED TOTP:", speakeasy.totp({
+  secret:   TWO_FA_SECRET,
+  encoding: "base32",
+  window:   1
+}));
 let pornDomains = new Set();
 if (fs.existsSync(PORN_BLOCK_FILE)) {
 	try {
@@ -174,23 +182,6 @@ if (cluster.isPrimary) {
 				});
 		},
 	});
-	fastify.addHook('onRequest', (request, reply, done) => {
-		const url = request.raw.url;               // e.g. "/admin", "/admin/login", "/admin/css/app.css", etc.
-		const isAdminPath = url.startsWith('/admin');
-		const isLoginPath = url === '/admin/login' || url.startsWith('/admin/login?');
-	  
-		if (isAdminPath && !isLoginPath) {
-		  // clear the real HttpOnly cookie
-		  reply.clearCookie('admin_session', {
-			path: '/admin',
-			httpOnly: true
-		  });
-		  // redirect to login once
-		  return reply.redirect('/admin/login');
-		}
-	  
-		done();
-	  });
 	fastify.register(fastifyCookie);
 	fastify.register(fastifyStatic, {
 		root: publicPath,
@@ -212,24 +203,34 @@ if (cluster.isPrimary) {
 		decorateReply: false,
 	});
 	fastify.post("/login", async (request, reply) => {
-		const {
-			password
-		} = request.body;
-		if (password === PASSWORD) {
-			reply
-				.setCookie("admin_session", "true", {
-					path: "/admin",
-					httpOnly: true
-				})
-				.send({
-					success: true
-				});
-		} else {
-			reply.send({
-				success: false
-			});
+		const { password, token } = request.body;
+	  
+		// 1) Check password
+		if (password !== PASSWORD) {
+		  return reply.send({ success: false });
 		}
-	});
+	  
+		// 2) Check TOTP token
+		const valid = speakeasy.totp.verify({
+		  secret:       TWO_FA_SECRET,
+		  encoding:     "base32",
+		  token,
+		  window:       1       // allow ±30s drift
+		});
+	  
+		if (!valid) {
+		  return reply.send({ success: false });
+		}
+	  
+		// 3) Both ok → set your admin cookie
+		reply
+		  .setCookie("admin_session","true", {
+			path: "/admin",
+			httpOnly: true
+		  })
+		  .send({ success: true });
+	  });
+	  
 
 	fastify.post("/logout", async (request, reply) => {
 		reply
