@@ -37,6 +37,12 @@ const LINKS_FILE = "links.json";
 const ADMIN_COOKIE = "admin_token";
 const redis = createClient();
 await redis.connect();
+console.log("TWO_FA_SECRET:", JSON.stringify(TWO_FA_SECRET));
+console.log("EXPECTED TOTP:", speakeasy.totp({
+  secret:   TWO_FA_SECRET,
+  encoding: "base32",
+  window:   1
+}));
 let pornDomains = new Set();
 if (fs.existsSync(PORN_BLOCK_FILE)) {
 	try {
