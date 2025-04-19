@@ -1118,9 +1118,6 @@ async function sendHeartbeat() {
   }
 }
 
-setTimeout(sendHeartbeat, 1000);
-setInterval(sendHeartbeat, 10000);
-
 async function hashPassword(password) {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -1516,42 +1513,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-async function checkForGlobalMessages() {
-  const sessionId = localStorage.getItem("session_id");
-
-  if (!sessionId) return;
-
-  try {
-      const response = await fetch(`/get-broadcasts/${sessionId}`);
-      const data = await response.json();
-
-      if (data.message) {
-          notification(data.message, data.bgColor);
-      }
-  } catch (error) {
-      console.error("Error fetching global messages:", error);
-  }
-}
-async function checkForIndividualMessages() {
-  const sessionId = localStorage.getItem("session_id");
-
-  if (!sessionId) return;
-
-  try {
-      const response = await fetch(`/get-message/${sessionId}`);
-      const data = await response.json();
-
-      if (data.message) {
-          notification(data.message, data.bgColor);
-      }
-  } catch (error) {
-      console.error("Error fetching messages:", error);
-  }
-}
-
-setInterval(checkForIndividualMessages, 5000);
-setInterval(checkForGlobalMessages, 5000);
-
 const backgroundPool = [
   'assets/otherBackground1.png',
   'assets/otherBackground2.png',
@@ -1668,3 +1629,54 @@ setTimeout(console.log.bind(console, "%cHelium", "background: #6C3BAA;color:#FFF
 setTimeout(console.log.bind(console, "%cIf you are seeing this, the main script system has loaded.", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 20px; font-size:18px;"));
 setTimeout(console.log.bind(console, "%cIf you encounter an error, contact Paxton.", "background: #6C3BAA;color:#FFF;padding:5px;border-radius: 5px;line-height: 20px; font-size:13px;"));
 setTimeout(console.log.bind(console, `%cInformation:\nOnline: ${online}\nURL: ${diagnosticDomain}\nBrowser: ${browserName}\nUA: ${userAgent}\nAccount Username: ${accountName}`, "background: grey;color:white;padding:5px;line-height: 15px; border-radius: 5px;font-size:12px;"));
+
+const ws = new WebSocket(
+  (location.protocol === 'https:' ? 'wss://' : 'ws://')
+  + location.host
+  + '/ws'
+);
+ws.addEventListener('message', ({ data }) => {
+  let msg;
+  try {
+    msg = JSON.parse(data);
+  } catch (_){ return; }
+  
+  // if this is telling *me* that I'm banned…
+  if (msg.type === 'sessionStatus'
+      && msg.sessionId === localStorage.getItem('session_id')
+      && msg.status === 'Banned'
+  ) {
+    // immediately drop them onto the banned page
+    window.location.href = '/banned';
+  }
+});
+
+ws.addEventListener('open', () => console.log('WS connected'));
+ws.addEventListener('close', () => console.log('WS disconnected'));
+
+ws.addEventListener('message', ({ data }) => {
+  const msg = JSON.parse(data);
+  switch (msg.type) {
+    case 'broadcast':
+      notification(msg.message, msg.bgColor);
+      break;
+    case 'individualMessage':
+      if (msg.sessionId === localStorage.getItem('session_id')) {
+        notification(msg.message, msg.bgColor);
+      }
+      break;
+    // if you want to react to other events here, add cases…
+  }
+});
+
+// turn heartbeat into a WS send:
+function sendHeartbeat() {
+  const sessionId = localStorage.getItem('session_id');
+  // only send if the socket is still open
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'heartbeat', sessionId }));
+  } else {
+    console.warn('Skipping heartbeat – WS not open (state=', ws.readyState, ')');
+  }
+}
+setInterval(sendHeartbeat, 10000);
