@@ -19,19 +19,18 @@
     let totalPages = 1;
   
     async function fetchAccounts() {
-      try {
-        const res = await fetch(`/acc/logs?page=${currentPage}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status} – ${res.statusText}`);
-        const { accounts, totalPages: tp } = await res.json();
-        totalPages = tp;
-        displayAccounts(accounts);
-      } catch (err) {
-        console.error('fetchAccounts error:', err);
-        document.getElementById('accountsContainer').innerHTML = `
-          <div class="text-red-500">Error loading accounts: ${err.message}</div>
-        `;
-      }
+    try {
+      const res = await fetch(`/acc/logs?page=${currentPage}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { accounts, totalPages: tp } = await res.json();
+      totalPages = tp;
+      displayAccounts(accounts);
+    } catch (err) {
+      console.error('fetchAccounts error:', err);
+      document.getElementById('accountsContainer').innerHTML =
+        `<div class="text-red-500">Error loading accounts: ${err.message}</div>`;
     }
+  }
   
     function displayAccounts(accounts) {
       const container = document.getElementById("accountsContainer");
@@ -94,22 +93,9 @@
       alert(data.message || "Perk level updated.");
       fetchAccounts();
     }
-
-  </script>
-  <script>
-    // initial load
     fetchAccounts();
+  setInterval(fetchAccounts, 5000);
 
-    // ── WebSocket for accounts panel ──────────────────────
-    const ws = new WebSocket((location.protocol==='https:'?'wss://':'ws://') + location.host + '/ws');
-    ws.addEventListener('message', ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.type === 'accountUpdate') {
-        // re‑fetch the list so it stays in sync
-        fetchAccounts();
-      }
-    });
-    // ───────────────────────────────────────────────────────
   </script>
 </body>
 </html>

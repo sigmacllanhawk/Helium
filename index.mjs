@@ -58,7 +58,7 @@ async function requireAdmin(request, reply) {
 	if (!token) {
 	  return reply.code(401).send({ error: "Unauthorized" });
 	}
-	const isValid = await redis.sismember("admin_tokens", token);
+	const isValid = await redis.sIsMember("admin_tokens", token);
 	if (!isValid) {
 	  return reply.clearCookie("admin_token", { path: "/admin" })
 				  .code(401)
@@ -216,7 +216,7 @@ if (cluster.isPrimary) {
 		// 2d) Everything else under /admin/* requires a token
 		if (url.startsWith("/admin")) {
 		  const token = request.cookies[ADMIN_COOKIE];
-		  const ok    = token && await redis.sismember("admin_tokens", token);
+		  const ok    = token && await redis.sIsMember("admin_tokens", token);
 		  if (!ok) {
 			return reply.redirect("/admin/login");
 		  }
@@ -242,42 +242,53 @@ if (cluster.isPrimary) {
 		decorateReply: false,
 	});
 	fastify.post("/login", async (request, reply) => {
-		const { password, token } = request.body;
+		try {
+		  const { password, token } = request.body || {};
+		  if (!password || !token) {
+			return reply.code(400).send({ success: false, error: "Missing password or 2FA code" });
+		  }
 	  
-		// 1) Check password
-		if (password !== PASSWORD) {
-		  return reply.send({ success: false });
+		  // 1) Check password
+		  if (password !== PASSWORD) {
+			return reply.send({ success: false });
+		  }
+	  
+		  // 2) Check TOTP token
+		  const valid = speakeasy.totp.verify({
+			secret:   TWO_FA_SECRET,
+			encoding: "base32",
+			token,
+			window:   1     // allow ±30s drift
+		  });
+		  if (!valid) {
+			return reply.send({ success: false });
+		  }
+	  
+		  // 3) Revoke any existing admin tokens
+		  await redis.del("admin_tokens");
+	  
+		  // 4) Generate a new random token and store it
+		  const newToken = randomBytes(32).toString("hex");
+		  await redis.sAdd("admin_tokens", newToken);
+
+	  
+		  // 5) Set the cookie and return success
+		  return reply
+			.setCookie(ADMIN_COOKIE, newToken, {
+			  path:     "/",
+			  httpOnly: true,
+			  sameSite: "strict",
+			  // secure: true,   // enable under HTTPS
+			  maxAge:   60 * 60 * 1000  // 1 hour
+			})
+			.send({ success: true });
+	  
+		} catch (err) {
+		  console.error("❌ /login error:", err);
+		  return reply.code(500).send({ success: false, error: "Internal server error" });
 		}
-	  
-		// 2) Check TOTP token
-		const valid = speakeasy.totp.verify({
-		  secret:   TWO_FA_SECRET,
-		  encoding: "base32",
-		  token,
-		  window:   1     // allow ±30s drift
-		});
-		if (!valid) {
-		  return reply.send({ success: false });
-		}
-	  
-		// 3) Revoke any existing admin tokens
-		await redis.del("admin_tokens");
-	  
-		// 4) Generate a new random token and store it
-		const newToken = randomBytes(32).toString("hex");
-		await redis.sadd("admin_tokens", newToken);
-	  
-		// 5) Set the cookie and return success
-		return reply
-		  .setCookie(ADMIN_COOKIE, newToken, {
-			path:     "/admin",
-			httpOnly: true,
-			sameSite: "strict",
-			// secure: true,   // enable under HTTPS
-			maxAge:   60 * 60 * 1000  // 1 hour
-		  })
-		  .send({ success: true });
 	  });
+	  
 	  
 	  // 1c) Allow logout from anywhere
 	  fastify.post("/logout", async (request, reply) => {

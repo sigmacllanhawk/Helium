@@ -51,12 +51,13 @@
         }
 
         async function fetchVisitedWebsites() {
-            const res = await fetch(`/visited-websites/logs?page=${currentPage}&category=${selectedCategory}`);
-            const data = await res.json();
-
-            totalPages = data.totalPages;
-            displayVisitedWebsites(data.logs);
-        }
+    const res = await fetch(
+      `/visited-websites/logs?page=${currentPage}&category=${selectedCategory}`
+    );
+    const data = await res.json();
+    totalPages = data.totalPages;
+    displayVisitedWebsites(data.logs);
+  }
 
         function displayVisitedWebsites(logs) {
             const container = document.getElementById("websitesList");
@@ -98,28 +99,7 @@
         }
 
         fetchVisitedWebsites();
+  setInterval(fetchVisitedWebsites, 5000);
     </script>
-    <script>
-        // ── WebSocket for Visited Websites ────────────────
-        const ws = new WebSocket(
-          (location.protocol === 'https:' ? 'wss://' : 'ws://')
-          + location.host
-          + '/ws'
-        );
-        ws.addEventListener('message', ({ data }) => {
-          const msg = JSON.parse(data);
-          if (msg.type === 'logEntry') {
-            // only update if it matches your current category filter
-            if (
-              selectedCategory === 'all' ||
-              (selectedCategory === 'porn' && isPorn(msg.url))
-            ) {
-              // re-fetch the current page so pagination stays correct
-              fetchVisitedWebsites();
-            }
-          }
-        });
-        // ──────────────────────────────────────────────────
-      </script>
 </body>
 </html>

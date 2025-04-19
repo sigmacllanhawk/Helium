@@ -80,13 +80,11 @@
         }
 
         async function fetchLogs() {
-            const res = await fetch(`/sessions/${sessionId}/logs?page=${currentPage}`);
-            const data = await res.json();
-
-            totalPages = data.totalPages;
-            displayLogs(data.logs);
-        }
-
+    const res = await fetch(`/sessions/${sessionId}/logs?page=${currentPage}`);
+    const data= await res.json();
+    totalPages = data.totalPages;
+    displayLogs(data.logs);
+  }
         function displayLogs(logs) {
             const container = document.getElementById("logsContainer");
             container.innerHTML = "";
@@ -168,52 +166,8 @@
         }
 
         fetchSessionDetails();
-    </script>
-    <script>
-        // ── WebSocket for Session Details ────────────────
-        const ws = new WebSocket(
-          (location.protocol === 'https:' ? 'wss://' : 'ws://')
-          + location.host
-          + '/ws'
-        );
-        ws.addEventListener('message', ({ data }) => {
-          const msg = JSON.parse(data);
-          if (msg.sessionId !== sessionId) return;  // ignore other sessions
-      
-          switch (msg.type) {
-            case 'sessionStatus':
-              // update the status line in your details panel
-              document.querySelector('#sessionDetails p:nth-child(3)')
-                      .textContent = msg.status === 'Online'
-                        ? 'Online Now'
-                        : msg.status;
-              break;
-      
-            case 'logEntry':
-              // prepend new log entries live
-              appendLogRow(msg.url, msg.timestamp);
-              break;
-      
-            case 'individualMessage':
-              // admin one‑offs: just alert
-              alert(msg.message);
-              break;
-          }
-        });
-      
-        // helper to insert a new log row at the top:
-        function appendLogRow(url, timestamp) {
-          const container = document.getElementById('logsContainer');
-          const row = document.createElement('div');
-          row.className = 'p-4 bg-gray-200 rounded overflow-container';
-          row.innerHTML = `
-            <p class="text-sm text-gray-600">${new Date(timestamp).toLocaleString()}</p>
-            <p class="text-sm font-semibold break-words">${url}</p>
-          `;
-          container.prepend(row);
-        }
-        // ──────────────────────────────────────────────────
-      </script>
-      
+  setInterval(fetchSessionDetails, 5000);
+  setInterval(fetchLogs,             5000);
+    </script>      
 </body>
 </html>

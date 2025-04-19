@@ -74,24 +74,23 @@
     }
 
     async function fetchSessions(page = 1) {
-  const searchTerm = document.getElementById("searchInput")?.value || "";
-  const filterValue = document.getElementById("filterSelect")?.value || "all";
-
-  try {
-    const res = await fetch(`/sessions/logs?page=${page}&search=${encodeURIComponent(searchTerm)}&filter=${filterValue}`);
-    const data = await res.json();
-
-    filteredSessions = data.sessions;
-    totalPages = data.totalPages || 1;
-    currentPage = data.currentPage || 1;
-
-    displaySessions();
-  } catch (err) {
-    console.error("Failed to fetch sessions:", err);
-    filteredSessions = [];
-    displaySessions();
+    const searchTerm = encodeURIComponent(document.getElementById("searchInput").value);
+    const filterVal  = document.getElementById("filterSelect").value;
+    try {
+      const res = await fetch(
+        `/sessions/logs?page=${page}&search=${searchTerm}&filter=${filterVal}`
+      );
+      const data = await res.json();
+      filteredSessions = data.sessions;
+      totalPages        = data.totalPages;
+      currentPage       = data.currentPage;
+      displaySessions();
+    } catch (err) {
+      console.error("Failed to fetch sessions:", err);
+      filteredSessions = [];
+      displaySessions();
+    }
   }
-}
 
 
 function filterSessions() {
@@ -155,30 +154,6 @@ function filterSessions() {
       fetchSessions();
     }
     fetchSessions();
+    setInterval(() => fetchSessions(currentPage), 5000);
   </script>
-<script>
-  // ── WebSocket for Global Session Tracker ─────────────
-  const ws = new WebSocket(
-    (location.protocol === 'https:' ? 'wss://' : 'ws://')
-    + location.host
-    + '/ws'
-  );
-
-  ws.addEventListener('message', ({ data }) => {
-    const msg = JSON.parse(data);
-    switch (msg.type) {
-      case 'sessionStatus':
-      case 'logEntry':
-        // whenever a session changes or a new log arrives, refresh the list
-        fetchSessions(currentPage);
-        break;
-      case 'broadcast':
-      case 'individualMessage':
-        // optional: show admin notifications
-        alert(msg.message);
-        break;
-    }
-  });
-  // ────────────────────────────────────────────────────
-</script>
 </body></html>
