@@ -25,7 +25,7 @@ import {
 
 const port = parseInt(process.env.PORT || "") || 8080;
 const numCPUs = os.cpus().length;
-const PASSWORD = "fm2!$&uprEa#Xxy%i7v*7e8jFSwmQs!!Nvz$6M44HZ%LXDs9jcWoiCXa$U&!it46SqN!s2Uf#tU8!^S^T7sDpRinY&f^RFHE5v$76njuhrvV^Ape#sSA@WQ9!f9h!YKT";
+const PASSWORD = "Xs6994^9573q8x6!K73h59v$232PT#cdGMCGfgn@fiv4RNhM!6Cf92bT5ib@m9j3M!i4GZj8%NmaD4%qkL^v&me8a7N2ARiP5!p%P%^U%bn6P5sat&wWdy7b!@PrTF^9";
 const publicPath = join(process.cwd(), "static");
 const uvPath = join(process.cwd(), "uv");
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
