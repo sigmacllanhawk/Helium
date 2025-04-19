@@ -12,7 +12,6 @@ import axios from "axios";
 import wisp from "wisp-server-node";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-import fastifyWebsocket from "@fastify/websocket";
 
 const port = parseInt(process.env.PORT || "") || 8080;
 const numCPUs = os.cpus().length;
