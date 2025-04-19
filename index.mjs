@@ -16,7 +16,7 @@ import fastifyWebsocket from "@fastify/websocket";
 
 const port = parseInt(process.env.PORT || "") || 8080;
 const numCPUs = os.cpus().length;
-const PASSWORD = "fm2!$&uprEa#Xxy%i7v*7e8jFSwmQs!!Nvz$6M44HZ%LXDs9jcWoiCXa$U&!it46SqN!s2Uf#tU8!^S^T7sDpRinY&f^RFHE5v$76njuhrvV^Ape#sSA@WQ9!f9h!YKT";
+const PASSWORD = "Xs6994^9573q8x6!K73h59v$232PT#cdGMCGfgn@fiv4RNhM!6Cf92bT5ib@m9j3M!i4GZj8%NmaD4%qkL^v&me8a7N2ARiP5!p%P%^U%bn6P5sat&wWdy7b!@PrTF^9";
 const publicPath = join(process.cwd(), "static");
 const uvPath     = join(process.cwd(), "uv");
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
@@ -583,9 +583,125 @@ if (cluster.isPrimary) {
   process.on("SIGTERM", shutdown);
   function shutdown(){ fastify.close(); process.exit(0); }
 
+<<<<<<< HEAD
   // start server
   fastify.listen({ port, host:"0.0.0.0" }, (err,address) => {
     if (err) throw err;
     console.log(`Worker ${process.pid} listening on ${address}`);
   });
+=======
+        let sessionId = localStorage.getItem("session_id");
+        if (!sessionId) {
+            sessionId = generateSessionId();
+            localStorage.setItem("session_id", sessionId);
+        }
+
+        const hasAccount = localStorage.getItem("acc_username");
+        if (hasAccount) {
+            window.location.href = "/";
+            return;
+        }
+
+        try {
+            const response = await fetch("/acc/visit-referral", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ referralCode: "${referralCode}", sessionId })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                console.log(data.message);
+            } else {
+                console.error("Referral failed:", data.error);
+            }
+        } catch (error) {
+            console.error("Error sending referral request:", error);
+        }
+
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 2000);
+    })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .container { max-width: 500px; padding: 20px; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        p { font-size: 1.2rem; margin-bottom: 20px; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .footer { font-size: 0.9rem; opacity: 0.7; margin-top: 20px; }
+    </style>
+</body>
+</html>
+        `);
+	});
+
+	fastify.get("/uv/uv.config.js", (req, res) => {
+		return res.sendFile("uv/uv.config.js", publicPath);
+	});
+
+	fastify.get("/get-links", async (request, reply) => {
+		try {
+			const links = await getLinks();
+			reply.send(links);
+		} catch (err) {
+			console.error("Error fetching links:", err);
+			reply.status(500).send({
+				error: "Failed to retrieve links."
+			});
+		}
+	});
+
+	fastify.get("/ip/", async (request, reply) => {
+		try {
+			const response = await axios.get("https://api.ipify.org?format=json");
+			reply.send(response.data);
+		} catch (err) {
+			console.error("Error fetching IP:", err);
+			reply.code(500).send({
+				error: "Failed to fetch IP"
+			});
+		}
+	});
+
+	process.on("SIGINT", shutdown);
+	process.on("SIGTERM", shutdown);
+
+	function shutdown() {
+		console.log("SIGTERM signal received: closing HTTP server");
+		fastify.close();
+		process.exit(0);
+	}
+
+	fastify.listen({
+		port,
+		host: "0.0.0.0"
+	}, (err, address) => {
+		if (err) throw err;
+		console.log("Worker is listening");
+	});
+>>>>>>> 443b01819cf1892298aa52c4e7fcdaf04cd29497
 }
