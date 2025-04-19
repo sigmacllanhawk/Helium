@@ -24,6 +24,7 @@ import {
 	baremuxPath
 } from "@mercuryworkshop/bare-mux/node";
 import speakeasy from "speakeasy";
+import { randomBytes } from 'node:crypto';
 
 const port = parseInt(process.env.PORT || "") || 8080;
 const numCPUs = os.cpus().length;
@@ -33,15 +34,9 @@ const publicPath = join(process.cwd(), "static");
 const uvPath = join(process.cwd(), "uv");
 const PORN_BLOCK_FILE = "blocklists/porn-block.txt";
 const LINKS_FILE = "links.json";
-
+const ADMIN_COOKIE = "admin_token";
 const redis = createClient();
 await redis.connect();
-console.log("TWO_FA_SECRET:", JSON.stringify(TWO_FA_SECRET));
-console.log("EXPECTED TOTP:", speakeasy.totp({
-  secret:   TWO_FA_SECRET,
-  encoding: "base32",
-  window:   1
-}));
 let pornDomains = new Set();
 if (fs.existsSync(PORN_BLOCK_FILE)) {
 	try {
@@ -52,7 +47,19 @@ if (fs.existsSync(PORN_BLOCK_FILE)) {
 		console.error("Error reading porn-block.txt:", error);
 	}
 }
-
+async function requireAdmin(request, reply) {
+	const token = request.cookies.admin_token;
+	if (!token) {
+	  return reply.code(401).send({ error: "Unauthorized" });
+	}
+	const isValid = await redis.sismember("admin_tokens", token);
+	if (!isValid) {
+	  return reply.clearCookie("admin_token", { path: "/admin" })
+				  .code(401)
+				  .send({ error: "Unauthorized" });
+	}
+  }
+  
 function formatTime(minutes) {
 	if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
 	const hours = Math.floor(minutes / 60);
@@ -80,9 +87,6 @@ function timeAgo(timestamp) {
 	return `${years} years ago`;
 }
 
-function isAdmin(request) {
-	return request.cookies?.admin_session === "true";
-}
 const SESSION_PREFIX = "sess:";
 const ACCOUNT_PREFIX = "acc:";
 const REFERRAL_KEY = "referrals";
@@ -182,7 +186,36 @@ if (cluster.isPrimary) {
 				});
 		},
 	});
+	
 	fastify.register(fastifyCookie);
+		  
+	fastify.addHook("preHandler", async (request, reply) => {
+		const { url, method } = request;
+	  
+		// 2a) Allow GET /admin/login (show form)
+		if (url === "/admin/login" && method === "GET") {
+		  return;
+		}
+	  
+		// 2b) Allow POST /login (submit form)
+		if (url === "/login" && method === "POST") {
+		  return;
+		}
+	  
+		// 2c) Allow POST /logout
+		if (url === "/logout" && method === "POST") {
+		  return;
+		}
+	  
+		// 2d) Everything else under /admin/* requires a token
+		if (url.startsWith("/admin")) {
+		  const token = request.cookies[ADMIN_COOKIE];
+		  const ok    = token && await redis.sismember("admin_tokens", token);
+		  if (!ok) {
+			return reply.redirect("/admin/login");
+		  }
+		}
+	  });
 	fastify.register(fastifyStatic, {
 		root: publicPath,
 		decorateReply: true,
@@ -212,50 +245,44 @@ if (cluster.isPrimary) {
 	  
 		// 2) Check TOTP token
 		const valid = speakeasy.totp.verify({
-		  secret:       TWO_FA_SECRET,
-		  encoding:     "base32",
+		  secret:   TWO_FA_SECRET,
+		  encoding: "base32",
 		  token,
-		  window:       1       // allow ±30s drift
+		  window:   1     // allow ±30s drift
 		});
-	  
 		if (!valid) {
 		  return reply.send({ success: false });
 		}
 	  
-		// 3) Both ok → set your admin cookie
-		reply
-		  .setCookie("admin_session","true", {
-			path: "/admin",
-			httpOnly: true
+		// 3) Revoke any existing admin tokens
+		await redis.del("admin_tokens");
+	  
+		// 4) Generate a new random token and store it
+		const newToken = randomBytes(32).toString("hex");
+		await redis.sadd("admin_tokens", newToken);
+	  
+		// 5) Set the cookie and return success
+		return reply
+		  .setCookie(ADMIN_COOKIE, newToken, {
+			path:     "/admin",
+			httpOnly: true,
+			sameSite: "strict",
+			// secure: true,   // enable under HTTPS
+			maxAge:   60 * 60 * 1000  // 1 hour
 		  })
 		  .send({ success: true });
 	  });
 	  
+	  // 1c) Allow logout from anywhere
+	  fastify.post("/logout", async (request, reply) => {
+		return reply
+		  .clearCookie(ADMIN_COOKIE, { path: "/admin" })
+		  .send({ success: true });
+	  });
 
-	fastify.post("/logout", async (request, reply) => {
-		reply
-			.clearCookie("admin_session", {
-				path: "/admin"
-			})
-			.send({
-				success: true
-			});
-	});
-
-	fastify.addHook("preHandler", async (request, reply) => {
-		const allowedRoutes = ["/admin/login", "/login.html", "/login"];
-		if (
-			!allowedRoutes.includes(request.url) &&
-			request.url.startsWith("/admin")
-		) {
-			const isLoggedIn = request.cookies?.admin_session === "true";
-			if (!isLoggedIn) {
-				return reply.redirect("/admin/login");
-			}
-		}
-	});
-
-	fastify.post("/ban/:id", async (request, reply) => {
+	  
+	  
+	fastify.post("/ban/:id", { preHandler: requireAdmin }, async (request, reply) => {
 		const {
 			id
 		} = request.params;
@@ -402,7 +429,7 @@ if (cluster.isPrimary) {
 		});
 	});
 
-	fastify.post("/admin/broadcast", async (request, reply) => {
+	fastify.post("/admin/broadcast",  { preHandler: requireAdmin }, async (request, reply) => {
 		const {
 			message,
 			bgColor
@@ -445,7 +472,7 @@ if (cluster.isPrimary) {
 
 		reply.send(messageData);
 	});
-	fastify.post("/admin/message", async (request, reply) => {
+	fastify.post("/admin/message",  { preHandler: requireAdmin },  async (request, reply) => {
 		const {
 			sessionId,
 			message,
@@ -803,7 +830,7 @@ if (cluster.isPrimary) {
 		});
 	});
 
-	fastify.post("/acc/set-perk-level", async (request, reply) => {
+	fastify.post("/acc/set-perk-level", { preHandler: requireAdmin },  async (request, reply) => {
 		const {
 			username,
 			perkLevel
@@ -888,7 +915,7 @@ if (cluster.isPrimary) {
 		});
 	  });
 	  
-	fastify.post("/acc/delete-account", async (request, reply) => {
+	fastify.post("/acc/delete-account", { preHandler: requireAdmin },  async (request, reply) => {
 		const {
 			username
 		} = request.body;
