@@ -94,9 +94,22 @@
       alert(data.message || "Perk level updated.");
       fetchAccounts();
     }
-  
+
+  </script>
+  <script>
     // initial load
     fetchAccounts();
+
+    // ── WebSocket for accounts panel ──────────────────────
+    const ws = new WebSocket((location.protocol==='https:'?'wss://':'ws://') + location.host + '/ws');
+    ws.addEventListener('message', ({ data }) => {
+      const msg = JSON.parse(data);
+      if (msg.type === 'accountUpdate') {
+        // re‑fetch the list so it stays in sync
+        fetchAccounts();
+      }
+    });
+    // ───────────────────────────────────────────────────────
   </script>
 </body>
 </html>

@@ -154,10 +154,31 @@ function filterSessions() {
       await res.json();
       fetchSessions();
     }
-
     fetchSessions();
-    setInterval(() => fetchSessions(currentPage), 5000);
   </script>
+<script>
+  // ── WebSocket for Global Session Tracker ─────────────
+  const ws = new WebSocket(
+    (location.protocol === 'https:' ? 'wss://' : 'ws://')
+    + location.host
+    + '/ws'
+  );
 
-
+  ws.addEventListener('message', ({ data }) => {
+    const msg = JSON.parse(data);
+    switch (msg.type) {
+      case 'sessionStatus':
+      case 'logEntry':
+        // whenever a session changes or a new log arrives, refresh the list
+        fetchSessions(currentPage);
+        break;
+      case 'broadcast':
+      case 'individualMessage':
+        // optional: show admin notifications
+        alert(msg.message);
+        break;
+    }
+  });
+  // ────────────────────────────────────────────────────
+</script>
 </body></html>
