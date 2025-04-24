@@ -1189,4 +1189,7 @@ if (cluster.isPrimary) {
 		if (err) throw err;
 		console.log("Worker is listening");
 	});
-}
+} export default (req, res) => {
+  // Your logic here
+  res.send('Hello, world!');
+};
