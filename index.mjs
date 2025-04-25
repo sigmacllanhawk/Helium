@@ -1,3 +1,9 @@
+const { createClient } = await import('redis')
+
+const client = createClient({
+  url: process.env.REDIS_URL
+})
+await client.connect()
 import 'dotenv/config';  
 import cluster from "node:cluster";
 import os from "node:os";
